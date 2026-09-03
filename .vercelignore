@@ -1,0 +1,11 @@
+# Secrets — never deploy local env files
+.env
+server/.env
+client/.env
+*.env.local
+
+# Local artifacts not needed at runtime
+docs/
+scripts/
+mongo-data/
+*.log

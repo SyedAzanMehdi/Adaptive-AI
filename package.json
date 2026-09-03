@@ -1,0 +1,24 @@
+{
+  "name": "adaptive-learning-platform",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "author": "Syed Azan Mehdi Shah",
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace @edu/server",
+    "dev:client": "npm run dev --workspace @edu/client",
+    "build": "npm run build --workspace @edu/client",
+    "start": "npm run start --workspace @edu/server",
+    "seed:admin": "npm run seed:admin --workspace @edu/server",
+    "seed:lessons": "npm run seed:lessons --workspace @edu/server",
+    "test": "npm run test --workspace @edu/server"
+  },
+  "dependencies": {
+    "mongodb": "^7.6.0"
+  }
+}

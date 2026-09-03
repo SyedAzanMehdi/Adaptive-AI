@@ -1,0 +1,276 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  html,
+  body {
+    overflow-x: clip;
+    max-width: 100%;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  /* Strict monochrome: true black / true white */
+  html.dark,
+  html.dark body {
+    background-color: #000000;
+    color: #fafafa;
+  }
+
+  html.light,
+  html.light body {
+    background-color: #ffffff;
+    color: #0a0a0a;
+  }
+
+  body {
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+
+  /* Custom sleek scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.6);
+  }
+  html.light ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.9);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(115, 115, 115, 0.5);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(163, 163, 163, 0.7);
+  }
+}
+
+@layer components {
+  /* Monochrome cards */
+  .card {
+    @apply bg-neutral-950 backdrop-blur-xl rounded-2xl border border-neutral-800 shadow-xl p-5 sm:p-7 transition-all duration-300;
+  }
+
+  html.light .card {
+    @apply bg-white border-neutral-200 shadow-lg text-neutral-800;
+  }
+
+  .card-hover {
+    @apply hover:border-neutral-500 hover:-translate-y-0.5;
+  }
+
+  html.light .card-hover {
+    @apply hover:border-neutral-400;
+  }
+
+  .glass-header {
+    @apply bg-black/80 backdrop-blur-md border-b border-neutral-800/70;
+  }
+
+  html.light .glass-header {
+    @apply bg-white/85 border-b border-neutral-200/80;
+  }
+
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-xl;
+  }
+
+  html.light .glass-card {
+    @apply bg-white/70 backdrop-blur-lg border border-neutral-200/80 shadow-xl text-neutral-800;
+  }
+
+  /* ── Buttons — monochrome ─────────────────────────────────── */
+  .btn-primary {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    overflow: hidden;
+    background: #ffffff;
+    color: #000000;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    letter-spacing: 0.01em;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.875rem;
+    border: 1px solid #ffffff;
+    cursor: pointer;
+    box-shadow: 0 4px 20px -6px rgba(255, 255, 255, 0.25);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  html.light .btn-primary {
+    background: #000000;
+    color: #ffffff;
+    border-color: #000000;
+    box-shadow: 0 4px 20px -6px rgba(0, 0, 0, 0.35);
+  }
+
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 35%,
+      rgba(128, 128, 128, 0.25) 50%,
+      transparent 65%
+    );
+    transform: translateX(-100%);
+    transition: transform 0.55s ease;
+    pointer-events: none;
+  }
+
+  .btn-primary:hover::before {
+    transform: translateX(100%);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px -6px rgba(255, 255, 255, 0.4);
+  }
+
+  html.light .btn-primary:hover {
+    box-shadow: 0 6px 28px -6px rgba(0, 0, 0, 0.45);
+  }
+
+  .btn-primary:active {
+    transform: scale(0.98) translateY(0);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    filter: none;
+    box-shadow: none;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 font-semibold px-4 py-2.5 rounded-xl border border-neutral-700 hover:border-neutral-500 transition-all duration-200 active:scale-[0.98];
+  }
+
+  html.light .btn-secondary {
+    @apply bg-white hover:bg-neutral-100 text-neutral-800 border-neutral-300 hover:border-neutral-500;
+  }
+
+  .btn-accent {
+    @apply inline-flex items-center justify-center gap-2 bg-white hover:bg-neutral-200 text-black font-bold px-5 py-2.5 rounded-xl transition-all duration-200 active:scale-[0.98];
+  }
+
+  html.light .btn-accent {
+    @apply bg-black hover:bg-neutral-800 text-white;
+  }
+
+  .btn-amber {
+    @apply inline-flex items-center justify-center gap-2 text-black font-bold px-5 py-2.5 rounded-xl transition-all duration-200 active:scale-[0.98] border border-white;
+    background: #ffffff;
+  }
+
+  html.light .btn-amber {
+    @apply text-white border-black;
+    background: #000000;
+  }
+
+  /* Input fields & Labels */
+  .input {
+    @apply w-full bg-black border border-neutral-800 rounded-xl px-4 py-2.5 text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-white focus:ring-2 focus:ring-white/20 transition-all duration-200;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  html.light .input {
+    @apply bg-white border-neutral-300 text-neutral-900 placeholder-neutral-400 focus:border-black focus:ring-black/10;
+  }
+
+  .label {
+    @apply block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5;
+  }
+
+  html.light .label {
+    @apply text-neutral-600;
+  }
+
+  /* Badges — monochrome */
+  .badge-premium {
+    @apply inline-flex items-center gap-1.5 border border-white text-white font-bold text-xs px-3 py-1 rounded-full;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  html.light .badge-premium {
+    @apply border-black text-black;
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .badge-free {
+    @apply inline-flex items-center gap-1 bg-neutral-900 border border-neutral-700 text-neutral-300 font-medium text-xs px-3 py-1 rounded-full;
+  }
+
+  html.light .badge-free {
+    @apply bg-white border-neutral-300 text-neutral-700;
+  }
+
+  /* Table scroll wrapper */
+  .table-scroll {
+    @apply overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 rounded-xl;
+  }
+
+  .table-scroll > table {
+    @apply w-full text-left border-collapse;
+  }
+
+  /* ── hero-field: GSAP animates this from opacity:0 ──
+     Ensure it's always visible as a base (GSAP will override) */
+  .hero-field {
+    opacity: 1;
+  }
+}
+
+/* Ambient background drift — disabled entirely by prefers-reduced-motion below */
+@keyframes blob-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, 30px) scale(1.08); }
+  66% { transform: translate(-25px, 15px) scale(0.95); }
+}
+@keyframes blob-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40% { transform: translate(-35px, -25px) scale(1.05); }
+  70% { transform: translate(20px, -35px) scale(0.92); }
+}
+@keyframes blob-drift-c {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, -30px) scale(1.1); }
+}
+.blob-a { animation: blob-drift-a 18s ease-in-out infinite; }
+.blob-b { animation: blob-drift-b 22s ease-in-out infinite; }
+.blob-c { animation: blob-drift-c 26s ease-in-out infinite; }
+
+@keyframes soft-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+.animate-soft-pulse { animation: soft-pulse 3.2s ease-in-out infinite; }
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
