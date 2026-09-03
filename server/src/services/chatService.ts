@@ -63,10 +63,16 @@ export async function getChatReply(
     (transcript ? `Conversation so far:\n${transcript}\n\n` : "") +
     `Student's new message: ${message}`;
 
+  const started = Date.now();
   try {
-    const text = await generateJson({ prompt, responseSchema: REPLY_JSON_SCHEMA });
+    const { text, slot } = await generateJson({
+      prompt,
+      responseSchema: REPLY_JSON_SCHEMA,
+      route: "primary",
+    });
     const parsed = JSON.parse(text);
     const result = chatReplySchema.parse(parsed);
+    console.log(`[chat] gemini reply ok via key ${slot} (${Date.now() - started}ms)`);
     return { reply: result.reply, domain: result.domain, source: "ai", degraded: false };
   } catch (err) {
     // Gemini quota/rate-limit/timeout/network failure: degrade gracefully to the

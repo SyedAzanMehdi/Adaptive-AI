@@ -120,6 +120,7 @@ export async function buildFreelanceProfile(
     schema: freelanceProfileSchema,
     responseSchema: PROFILE_JSON_SCHEMA,
     mock: () => mockProfile(top, focus),
+    route: "secondary",
   });
 
   return { profile: result, source };

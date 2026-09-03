@@ -5,8 +5,8 @@
 | Field | Detail |
 |---|---|
 | **Document ID** | 14_Vercel_Deployment_Guide |
-| **Version** | 1.0 |
-| **Date** | 2026-08-31 |
+| **Version** | 1.1 |
+| **Date** | 2026-09-03 |
 | **Author** | Syed Azan Mehdi Shah |
 | **Audience** | Developers and technical operators |
 
@@ -116,8 +116,8 @@ Add each variable for **Production, Preview and Development**:
 |---|---|---|
 | `MONGO_URI` | your Atlas connection string | required — the API refuses to start without it |
 | `JWT_SECRET` | any long random string (40+ chars) | e.g. output of a password generator |
-| `GEMINI_API_KEY` | your Google AI Studio key | powers Ask AI, evaluations, diagnostics |
-| `GEMINI_API_KEY_2` | optional second key | doubles free-tier quota (cascade) |
+| `GEMINI_API_KEY` | your Google AI Studio key | powers **Ask AI**; fallback credential for every other AI feature |
+| `GEMINI_API_KEY_2` | optional second key | powers diagnostics, evaluations, adaptation, Dojo, Autopilot, Freelance — keeps bulk generation off the chat key |
 | `GEMINI_MODEL` | `gemini-3.5-flash-lite` | primary model |
 | `GEMINI_FALLBACK_MODELS` | `gemini-flash-lite-latest,gemini-3-flash-preview` | rollover list on quota/overload |
 | `AI_TIMEOUT_MS` | `10000` | per-attempt Gemini timeout |

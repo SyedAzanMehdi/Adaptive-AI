@@ -57,6 +57,7 @@ export async function generateQuestionForDomain(
     schema: diagnosticQuestionSchema,
     responseSchema: QUESTION_JSON_SCHEMA,
     mock: () => mockDiagnosticQuestion(domain, level, matrix.history.length),
+    route: "secondary",
   });
   return { ...result, domain, difficulty: level };
 }

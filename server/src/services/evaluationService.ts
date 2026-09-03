@@ -59,6 +59,7 @@ export async function evaluateCode(
     schema: evaluationSchema,
     responseSchema: EVALUATION_JSON_SCHEMA,
     mock: () => mockEvaluation(code, exercise.checks, tier),
+    route: "secondary",
   });
   return { evaluation: result, source };
 }

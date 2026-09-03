@@ -129,6 +129,7 @@ export async function critiqueDesign(
     schema: dojoCritiqueSchema,
     responseSchema: CRITIQUE_JSON_SCHEMA,
     mock: () => mockCritique(challenge, notes),
+    route: "secondary",
   });
   return { critique: result, source };
 }

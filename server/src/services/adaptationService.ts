@@ -53,6 +53,7 @@ export async function getAdaptedLesson(
     schema: adaptationSchema,
     responseSchema: ADAPTATION_JSON_SCHEMA,
     mock: () => mockAdaptation(lesson.title, lesson.objectives, tier, style),
+    route: "secondary",
   });
 
   lesson.adaptations = lesson.adaptations.filter((a) => a.cacheKey !== cacheKey);

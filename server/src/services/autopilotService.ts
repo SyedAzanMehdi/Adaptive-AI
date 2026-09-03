@@ -113,6 +113,7 @@ export async function analyzeJobPosting(
     schema: autopilotAnalysisSchema,
     responseSchema: ANALYSIS_JSON_SCHEMA,
     mock: () => mockAnalyze(jobDescription, targetRole),
+    route: "secondary",
   });
   const role = targetRole?.trim() || result.role || "Software Engineer";
   return { analysis: { ...result, role }, source };

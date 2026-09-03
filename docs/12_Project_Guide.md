@@ -5,8 +5,8 @@
 | Field | Detail |
 |---|---|
 | **Document ID** | 12_Project_Guide |
-| **Version** | 1.1 |
-| **Date** | 2026-08-31 |
+| **Version** | 1.2 |
+| **Date** | 2026-09-03 |
 | **Author** | Syed Azan Mehdi Shah |
 | **Audience** | Judges, reviewers, collaborators, and anyone running the project |
 
@@ -33,7 +33,7 @@ with a strict MVC architecture and a dedicated AI services layer.
 |---|---|
 | Node.js | ≥ 20.x (tested on 24.x) |
 | npm | ≥ 10.x |
-| MongoDB | **Not required** — an embedded in-memory MongoDB runs automatically |
+| MongoDB | **No local install required** — the project connects to a MongoDB Atlas cluster via `MONGO_URI`; an embedded MongoDB starts automatically as a fallback when `MONGO_URI` is blank |
 | Gemini API key | Optional — the platform runs fully offline in mock AI mode |
 
 ### 2.2 Install
@@ -73,11 +73,11 @@ Then open **http://localhost:5173**:
 
 | Variable | Effect |
 |---|---|
-| `GEMINI_API_KEY` | Switches AI from the deterministic mock to real Gemini (structured outputs, schema-validated). Without it, everything still works offline. |
-| `GEMINI_API_KEY_2` | Optional second key. Free-tier quota is per key, so a second key doubles capacity for the AI decision paths. |
+| `GEMINI_API_KEY` | Switches AI from the deterministic mock to real Gemini (structured outputs, schema-validated). Without it, everything still works offline. Pays for **Ask AI**, and acts as the fallback credential for every other AI feature. |
+| `GEMINI_API_KEY_2` | Optional second key. Pays for the heavier AI features — adaptive diagnostic and its prefetch, lesson adaptation, code evaluation, Dojo critique, Career Autopilot and Freelance Launchpad — so bulk generation can't starve the chat. It's a preference, not a wall: each feature still tries the other key, then the mock. Leave it unset and everything runs on the first key. |
 | `GEMINI_MODEL` / `GEMINI_FALLBACK_MODELS` | Primary model and comma-separated rollover list (quota/overload cascade). |
 | `AI_TIMEOUT_MS` | Per-attempt Gemini timeout (dev `.env` uses 12000 to ride out free-tier latency spikes). |
-| `MONGO_URI` | Point at MongoDB Atlas / local mongod for persistent data. Empty = embedded ephemeral DB (resets on restart). |
+| `MONGO_URI` | Set to the project's MongoDB Atlas cluster (database `adaptive_learning`). Keep the database name in the path or Mongoose silently writes to a `test` database. Blank = embedded dev DB persisted at `server/mongo-data/`. |
 | `JWT_SECRET` | Change for any non-local deployment. |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | Override the seeded admin. |
 
@@ -221,7 +221,8 @@ Urdu dual-language glossary. A wedge into the markets where the next billion lea
 | Symptom | Fix |
 |---|---|
 | Port 5000 busy | A previous server instance is still running; stop it or change `PORT` |
-| Data disappeared | Embedded DB is ephemeral by design; set `MONGO_URI` for persistence |
+| Data disappeared | Data lives in the Atlas cluster named in `MONGO_URI` (database `adaptive_learning`) — check Atlas → Browse Collections. On the embedded fallback, delete `server/mongo-data/` only when you *want* a reset |
+| Boot fails with `MongooseServerSelectionError` / `ReplicaSetNoPrimary` | Atlas is unreachable: verify the machine's IP is in Atlas → Network Access, and keep `serverSelectionTimeoutMS` at 30s (cold connects measured 4–10s) |
 | AI answers feel canned | That's mock mode — add `GEMINI_API_KEY` for real Gemini |
 | 402 on Memory Twin/DNA | Expected for free accounts — subscribe or have an admin grant premium |
 | Rate-limited (429) | Login 10/15min, chat 60/15min, autopilot/dojo/freelance 10/15min, global 300/15min — windows reset automatically |

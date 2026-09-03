@@ -91,9 +91,15 @@ export async function connectDB(): Promise<void> {
 
   await mongoose.connect(uri, {
     maxPoolSize: 20,
-    serverSelectionTimeoutMS: 10_000,
+    // 30s (driver default), not 10s. Measured against Atlas from this network:
+    // cold connect takes 4-10s for SRV discovery + TLS to all three shard
+    // members, so a 10s ceiling intermittently crashed boot with
+    // MongooseServerSelectionError / ReplicaSetNoPrimary. This only bounds how
+    // long the driver waits to find a usable server before erroring — it adds no
+    // latency to queries once connected, so hot-path budgets are unaffected.
+    serverSelectionTimeoutMS: 30_000,
   });
-  console.log("[db] connected");
+  console.log(`[db] connected → ${mongoose.connection.host}/${mongoose.connection.name}`);
 }
 
 export async function disconnectDB(): Promise<void> {

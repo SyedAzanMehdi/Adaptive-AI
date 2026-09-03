@@ -5,8 +5,8 @@
 | Field | Detail |
 |---|---|
 | **Document ID** | 03_Manual_Guide |
-| **Version** | 1.2 |
-| **Date** | 2026-08-31 |
+| **Version** | 1.3 |
+| **Date** | 2026-09-03 |
 | **Author** | Syed Azan Mehdi Shah |
 | **Audience** | Developers and technical operators |
 
@@ -18,7 +18,7 @@
 |---|---|
 | Node.js | ≥ 20.x (LTS) |
 | npm | ≥ 10.x |
-| MongoDB | **Not required** — an embedded MongoDB runs automatically and persists to `server/mongo-data/` (accounts/data survive restarts); set `MONGO_URI` for Atlas/local persistence, or delete that folder for a clean slate |
+| MongoDB | **Atlas cluster is configured** — the project reads `MONGO_URI` from `server/.env` and connects to MongoDB Atlas (`cluster0`, database `adaptive_learning`). No local install needed. If `MONGO_URI` is blank, an embedded MongoDB runs automatically and persists to `server/mongo-data/` (delete that folder for a clean slate) |
 | Gemini API key | From Google AI Studio (server-side only) |
 | Git | ≥ 2.40 |
 
@@ -40,16 +40,18 @@ Create `server/.env` (never commit this file):
 
 ```env
 PORT=5000
-MONGO_URI=mongodb://127.0.0.1:27017/adaptive_learning
+MONGO_URI=mongodb+srv://<db_user>:<db_password>@<cluster>.mongodb.net/adaptive_learning?retryWrites=true&w=majority
 JWT_SECRET=<strong-random-secret>
 JWT_EXPIRES_IN=15m
 GEMINI_API_KEY=<your-google-ai-studio-key>
-GEMINI_API_KEY_2=<optional second key — doubles free-tier quota>
+GEMINI_API_KEY_2=<optional second key — the bulk AI features spend this one>
 GEMINI_MODEL=gemini-3.5-flash-lite
 GEMINI_FALLBACK_MODELS=gemini-flash-lite-latest,gemini-3-flash-preview
 AI_TIMEOUT_MS=12000
 NODE_ENV=development
 ```
+
+> **Two Atlas gotchas.** (1) Include the database name in the path (`/adaptive_learning`) — without it Mongoose silently writes to a `test` database. (2) `db.ts` sets `serverSelectionTimeoutMS: 30_000`, not 10s: a cold Atlas connection measured **4–10s** here (SRV discovery + TLS handshakes to all three shard members), and a 10s ceiling intermittently crashed boot with `MongooseServerSelectionError` / `ReplicaSetNoPrimary`. That bound only governs how long the driver waits to find a usable server before erroring; it adds no latency to queries once connected.
 
 The AI layer walks **key × model** in order: on quota errors (429 /
 RESOURCE_EXHAUSTED) it waits out Google's retry hint once, on transient
@@ -57,6 +59,17 @@ overload/timeouts it rolls to the next model, and only when every
 combination fails does it serve the deterministic fallback provider.
 Free-tier quotas are per key **and** per model, so a second key and a
 short model list keep AI-backed features live during bursts.
+
+The two keys are also **partitioned by feature**: `GEMINI_API_KEY` pays for
+Ask AI (the most latency-sensitive, user-facing path), and
+`GEMINI_API_KEY_2` pays for everything heavier — the adaptive diagnostic and
+its prefetch, lesson adaptation, code evaluation, Dojo critique, Career
+Autopilot and Freelance Launchpad. This stops bulk generation from starving
+the chat. It is a *preference*, not a hard wall: each feature still tries the
+other key before falling back to the deterministic provider, so leaving
+`GEMINI_API_KEY_2` unset simply routes everything through the first key.
+Every AI success is logged with the credential that served it
+(`… ok via key 2`), which is how you confirm the split at runtime.
 
 Create `client/.env`:
 
@@ -167,7 +180,8 @@ The API is stateless: redeploy the previous build; MongoDB schema changes must b
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | `401 TOKEN_INVALID` on every request | Clock skew or wrong `JWT_SECRET` | Sync clock; verify secret matches signing side |
-| `401` on login for an account that worked before a restart | Dev database was reset (accounts vanished) | Fixed: the embedded dev DB now persists to `server/mongo-data/`. To intentionally reset, stop the server and delete that folder |
+| `401` on login for an account that worked before a restart | Dev database was reset (accounts vanished) | No longer applies on Atlas — accounts persist in the cloud cluster. On the embedded fallback, the DB persists to `server/mongo-data/`; to intentionally reset, stop the server and delete that folder |
+| Boot dies with `MongooseServerSelectionError` / `ReplicaSetNoPrimary` | Atlas unreachable: either the server-selection timeout is shorter than the WAN handshake, or this machine's IP is not in the Atlas allowlist | `serverSelectionTimeoutMS` is 30s in `db.ts` (cold Atlas connect measured 4–10s here). In Atlas → Network Access, confirm the current public IP is allowed (or `0.0.0.0/0` for development) |
 | AI calls time out | Latency spike or bad key | Check fallback serving; verify `GEMINI_API_KEY` and model name |
 | Admin route returns 403 for admin | Role claim missing | Re-login (old token predates role claim); check seed script |
 | Structured output rejected | Schema mismatch | Compare AI response against `shared/src/schemas.ts`; lower temperature |

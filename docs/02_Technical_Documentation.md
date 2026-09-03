@@ -5,8 +5,8 @@
 | Field | Detail |
 |---|---|
 | **Document ID** | 02_Technical_Documentation |
-| **Version** | 1.3 |
-| **Date** | 2026-08-31 |
+| **Version** | 1.4 |
+| **Date** | 2026-09-03 |
 | **Author** | Syed Azan Mehdi Shah |
 | **Companion Docs** | 01_PRD.md, 03_Manual_Guide.md, 04_User_Manual.md |
 
@@ -93,11 +93,12 @@ project-root/                    # npm workspaces monorepo (TypeScript)
 
 Single point of contact with `@google/genai`. Responsibilities:
 
-- Initialize Gemini clients from `GEMINI_API_KEY` / `GEMINI_API_KEY_2` (env only; read live so config changes take effect without restart).
+- Initialize Gemini clients from `GEMINI_API_KEY` (slot 1) and `GEMINI_API_KEY_2` (slot 2) — env only; read live so config changes take effect without restart.
 - Expose `generateStructured(prompt, schema, options)` which enforces a JSON response schema.
+- **Route each feature to a preferred credential** (`route: "primary" | "secondary"`). Ask AI owns slot 1 so the most latency-sensitive, user-facing path is never starved by bulk generation; the diagnostic (including its speculative prefetch), adaptation, evaluation, Dojo critique, Autopilot and Freelance paths spend slot 2. Routing partitions the free-tier budget *without* giving up resilience — a route always tries the other configured key before the deterministic provider, and with only one key configured every route simply uses it.
 - Walk a **key × model cascade** (`GEMINI_MODEL` then `GEMINI_FALLBACK_MODELS`): quota errors (429 / RESOURCE_EXHAUSTED) wait out Google's retry hint once, transient overloads/timeouts roll to the next model, and the whole walk is bounded (~45s) before the deterministic fallback provider takes over.
 - Apply temperature 0.4 and a per-attempt timeout (`AI_TIMEOUT_MS`, 12s default in dev) tuned for free-tier latency spikes.
-- Log token usage and latency for admin analytics.
+- Log the serving credential and latency (`[ai] gemini structured response ok via key 2 (1527ms)`, `[chat] gemini reply ok via key 1 (2301ms)`) so quota spend is attributable per feature.
 
 ### 4.2 diagnosticService.js
 
