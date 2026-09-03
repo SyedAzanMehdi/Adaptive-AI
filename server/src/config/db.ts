@@ -10,6 +10,45 @@ let memoryServer: MemoryServer | null = null;
 // sessions alive (tests always run against a fresh ephemeral DB).
 const DEFAULT_DEV_DB_PATH = path.resolve(process.cwd(), "mongo-data");
 
+function isPidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (err) {
+    // EPERM means the process exists but belongs to another user/elevation —
+    // still alive. ESRCH (or anything else) means it is gone.
+    return (err as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+/**
+ * A previous dev server killed without a clean shutdown leaves mongod.lock
+ * behind, and the next start dies with a cryptic "DBPathInUse ... lock file"
+ * stack trace. mongod.lock holds the owning mongod's PID, so we can tell a
+ * stale lock (owner dead → safe to remove) from a live one (another dev server
+ * is genuinely running → fail fast with guidance instead of corrupting data).
+ */
+async function clearStaleLock(dbPath: string): Promise<void> {
+  const lockFile = path.join(dbPath, "mongod.lock");
+  if (!fs.existsSync(lockFile)) return;
+  const ownerPid = Number.parseInt(fs.readFileSync(lockFile, "utf8").trim(), 10);
+  if (!Number.isFinite(ownerPid) || ownerPid <= 0) return; // unparseable: let mongod decide
+  // On a tsx-watch reload the previous mongod may still be shutting down; give
+  // it a few seconds to release the lock before treating it as a real conflict.
+  const deadline = Date.now() + 8_000;
+  while (isPidAlive(ownerPid)) {
+    if (Date.now() > deadline) {
+      throw new Error(
+        `Another dev server (mongod PID ${ownerPid}) is already using the database at ${dbPath}. ` +
+          `Stop it first, or run this one with a different EMBEDDED_DB_PATH or a real MONGO_URI.`
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  fs.rmSync(lockFile, { force: true });
+  console.log(`[db] removed stale mongod.lock (owner PID ${ownerPid} is not running)`);
+}
+
 export async function connectDB(): Promise<void> {
   let uri = env.MONGO_URI;
 
@@ -28,6 +67,7 @@ export async function connectDB(): Promise<void> {
 
     if (dbPath) {
       fs.mkdirSync(dbPath, { recursive: true });
+      await clearStaleLock(dbPath);
       const mem = await MongoMemoryServer.create({
         instance: { dbPath, storageEngine: "wiredTiger" },
       });
