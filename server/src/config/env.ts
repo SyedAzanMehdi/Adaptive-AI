@@ -15,6 +15,7 @@ for (const candidate of candidates) {
 export const env = {
   PORT: Number(process.env.PORT ?? 5000),
   MONGO_URI: process.env.MONGO_URI ?? "",
+  USE_EMBEDDED_DB: process.env.USE_EMBEDDED_DB === "true",
   JWT_SECRET: process.env.JWT_SECRET ?? "dev-secret-change-me",
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN ?? "15m",
   JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN ?? "7d",

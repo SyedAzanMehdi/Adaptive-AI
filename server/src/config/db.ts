@@ -50,7 +50,7 @@ async function clearStaleLock(dbPath: string): Promise<void> {
 }
 
 export async function connectDB(): Promise<void> {
-  let uri = env.MONGO_URI;
+  let uri = env.USE_EMBEDDED_DB ? "" : env.MONGO_URI;
 
   if (!uri) {
     if (env.NODE_ENV === "production") {
