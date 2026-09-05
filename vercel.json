@@ -1,10 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "MONGOMS_DISABLE_POSTINSTALL=1 npm install",
-  "buildCommand": "npm run build -w @edu/client",
+  "installCommand": "MONGOMS_DISABLE_POSTINSTALL=1 npm install --include=dev",
+  "buildCommand": "npm run build --workspace @edu/client",
   "outputDirectory": "client/dist",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api" },
+    { "source": "/api/:path*", "destination": "/api/index.ts" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "functions": {
