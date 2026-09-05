@@ -1,6 +1,9 @@
 node_modules/
 dist/
 build/
+# TypeScript incremental build state — a committed tsbuildinfo makes `tsc -b`
+# skip or misjudge work on a fresh CI checkout.
+*.tsbuildinfo
 # Secrets — never commit real env files (any depth), keep the .example templates
 .env
 .env.*

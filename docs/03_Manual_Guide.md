@@ -5,8 +5,8 @@
 | Field | Detail |
 |---|---|
 | **Document ID** | 03_Manual_Guide |
-| **Version** | 1.3 |
-| **Date** | 2026-09-03 |
+| **Version** | 1.4 |
+| **Date** | 2026-09-05 |
 | **Author** | Syed Azan Mehdi Shah |
 | **Audience** | Developers and technical operators |
 
@@ -71,11 +71,25 @@ other key before falling back to the deterministic provider, so leaving
 Every AI success is logged with the credential that served it
 (`… ok via key 2`), which is how you confirm the split at runtime.
 
-Create `client/.env`:
+`client/.env` is **optional** — leave `VITE_API_URL` unset. The SPA defaults to
+the same-origin relative path `/api/v1`, which the Vite dev proxy forwards to
+`http://localhost:5000` in development and the Vercel rewrite forwards to the
+serverless function in production, so one default works in both.
 
 ```env
-VITE_API_URL=http://localhost:5000/api/v1
+# client/.env — only needed for a split-origin setup
+# VITE_API_URL=https://api.your-domain.com/api/v1
 ```
+
+> **Do not set `VITE_API_URL=http://localhost:5000/api/v1`.** Vite inlines
+> `VITE_*` values into the bundle at build time, so that string ships to
+> production and makes the deployed SPA call **each visitor's own machine**.
+> It appears to work locally, which is exactly why it goes unnoticed.
+>
+> The dev proxy target reads `BACKEND_URL` from the **shell** environment
+> (`BACKEND_URL=http://localhost:5000 npm run dev:client`) and defaults to
+> `http://localhost:5000`. Vite never loads `server/.env`, so a variable
+> defined only there is `undefined` in `vite.config.ts`.
 
 ### 2.3 Run in development
 

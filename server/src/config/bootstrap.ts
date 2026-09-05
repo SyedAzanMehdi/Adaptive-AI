@@ -15,7 +15,7 @@ export async function bootstrapDevData(): Promise<void> {
       passwordHash: await hashPassword(password),
       role: "admin",
     });
-    console.log(`[bootstrap] created default admin: ${email} / ${password}`);
+    console.log(`[bootstrap] created default admin: ${email} (password from SEED_ADMIN_PASSWORD)`);
   }
 
   for (const seed of LESSONS) {

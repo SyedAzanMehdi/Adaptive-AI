@@ -5,8 +5,8 @@
 | Field | Detail |
 |---|---|
 | **Document ID** | 14_Vercel_Deployment_Guide |
-| **Version** | 1.1 |
-| **Date** | 2026-09-03 |
+| **Version** | 1.2 |
+| **Date** | 2026-09-05 |
 | **Author** | Syed Azan Mehdi Shah |
 | **Audience** | Developers and technical operators |
 
@@ -29,6 +29,25 @@ The repository already contains the deployment wiring:
 - `vercel.json` — build command, static output, `/api/*` routing, SPA fallback, 60s function timeout.
 - `api/index.ts` — serverless entry point: connects to MongoDB on first request, runs the idempotent seed (admin + canonical lessons), then hands requests to Express.
 - `.vercelignore` — keeps local secrets (`server/.env`, `client/.env`) out of the upload.
+
+> **Critical — this is an npm-workspaces monorepo, so Vercel's *Root Directory*
+> must be left empty (the repository root).**
+>
+> `client/package.json` depends on `@edu/shared`, a **private workspace
+> package** that does not exist on the public npm registry. If the Root
+> Directory is set to `client`, Vercel runs `npm install` against
+> `client/package.json` alone, the install aborts with
+> `npm error code E404 … The requested resource '@edu/shared@*' could not be
+> found`, and **no `node_modules` is ever created**. The build then fails with
+> hundreds of `Cannot find module 'react'` / `Cannot find name 'JSX'` errors —
+> those TypeScript errors are a *symptom* of the aborted install, not a
+> dependency-listing problem. Installing from the root resolves `@edu/shared`
+> locally and the build succeeds.
+>
+> There must also be **no `vercel.json` inside `client/`**: a frontend-only
+> config there only takes effect when the Root Directory is wrongly set to
+> `client`, and it silently produces a deploy with no API. The root
+> `vercel.json` is the single source of truth.
 
 ---
 
@@ -53,6 +72,17 @@ use a real database.
    auto-generated password. **Copy the password** — it is shown only once.
 4. Under **Network Access**, add IP address `0.0.0.0/0` (allow connections
    from anywhere — required because Vercel function IPs rotate).
+
+   > The same allowlist also governs **local development**. A home/ISP address
+   > rotates, so a cluster that worked yesterday can start refusing you today —
+   > re-add your current public IP (search "what is my ip") when that happens.
+   >
+   > A rejected IP does **not** look like a firewall block. TCP to port 27017
+   > still succeeds, but Atlas refuses the TLS handshake, so the driver reports
+   > `MongooseServerSelectionError: ReplicaSetNoPrimary` with
+   > `commonWireVersion: 0` and the log shows `tlsv1 alert internal error`.
+   > That signature means *network access*, not a wrong password or URI — do not
+   > go rewriting the connection string.
 5. Click **Connect → Drivers**, select your driver version, and copy the
    connection string. It looks like:
 
@@ -100,13 +130,18 @@ git push -u origin main
    |---|---|
    | Project name | `adaptive-learning-platform` (any name) |
    | Framework preset | **Other** |
-   | Root directory | *(leave empty)* |
+   | Root directory | ***(leave empty — must be the repository root)*** |
    | Build command | `npm run build -w @edu/client` |
    | Output directory | `client/dist` |
    | Install command | *(leave default)* |
 
    The repository's `vercel.json` is picked up automatically and provides the
    API routing — do not add conflicting settings.
+
+   > If the project already exists with the wrong value, fix it under
+   > **Settings → General → Root Directory** (clear the field), then
+   > **Deployments → ⋯ → Redeploy**. The build will keep failing until this is
+   > corrected — see Section 1.
 
 ### 4.3 Add environment variables (same screen, expand "Environment Variables")
 
@@ -123,7 +158,16 @@ Add each variable for **Production, Preview and Development**:
 | `AI_TIMEOUT_MS` | `10000` | per-attempt Gemini timeout |
 | `SEED_ADMIN_EMAIL` | e.g. `admin@example.com` | admin account created on first boot |
 | `SEED_ADMIN_PASSWORD` | strong password of your choice | for that admin account |
+| `NODE_ENV` | `production` | enables the hardened CSP/CORS profile |
 | `MONGOMS_DISABLE_POSTINSTALL` | `1` | stops a dev-only MongoDB binary download during build |
+
+> **Do *not* set `VITE_API_URL` on the Vercel project.** The SPA is same-origin
+> by default — it calls the relative path `/api/v1`, which Vercel routes to the
+> serverless function. Setting it to `http://localhost:5000/api/v1` (a common
+> copy-paste from a local `.env`) bakes that URL into the JavaScript bundle and
+> makes the deployed site call **each visitor's own machine**, so every request
+> fails with a network error even though the API is healthy. Set it only for a
+> split-origin deploy where the API genuinely lives on another domain.
 
 ### 4.4 Deploy
 
@@ -221,6 +265,11 @@ Work through this checklist against your Vercel URL (replace the domain):
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
+| Build fails with hundreds of `Cannot find module 'react'` / `Cannot find name 'JSX'` errors | Root Directory set to `client`, so `npm install` hit `E404 @edu/shared@*` and aborted — no `node_modules` exists | Clear **Settings → General → Root Directory** and redeploy. The TS errors are a symptom; do not edit `package.json` |
+| Install log shows `npm error code E404 … '@edu/shared@*' could not be found` | Same as above — the install is running from a workspace subfolder instead of the monorepo root | Run the install from the repository root (clear Root Directory) |
+| Site loads but every request in the browser console targets `localhost:5000` | `VITE_API_URL` was set on the Vercel project and baked into the bundle | Delete that variable and redeploy; the SPA is same-origin by default (`/api/v1`) |
+| Local dev: `/api` requests from `:5173` fail or 404 | Vite reads the **shell** environment, not `server/.env`, so a proxy target defined only there is `undefined` | Start the client with `BACKEND_URL=http://localhost:5000 npm run dev`, or leave it unset to use that default |
+| `tsc -b` skips work or reports stale errors on a fresh checkout | A `*.tsbuildinfo` file was committed | `git rm --cached <file>.tsbuildinfo`; the pattern is already in `.gitignore` |
 | 503 `SERVICE_UNAVAILABLE` on `/api/*` | `MONGO_URI` missing, wrong password, or Atlas IP allowlist too narrow | Re-check the connection string; ensure network access includes `0.0.0.0/0` |
 | `aiMode:"mock"` in health | No Gemini key in the environment | Add `GEMINI_API_KEY` and redeploy |
 | AI answers fall back to mock/knowledge intermittently | Free-tier quota or latency spike | Add `GEMINI_API_KEY_2`; the key × model cascade handles the rest |
