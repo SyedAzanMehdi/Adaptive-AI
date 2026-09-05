@@ -7,7 +7,10 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target:process.env.backend_url ,
+        // Must default correctly: Vite reads the SHELL env, not server/.env, so
+        // a var defined only there is undefined here and every /api proxy
+        // request fails. Override with BACKEND_URL when the API is elsewhere.
+        target: process.env.BACKEND_URL || "http://localhost:5000",
         changeOrigin: true,
       },
     },

@@ -1,7 +1,11 @@
 import axios from "axios";
 import { useAuthStore } from "../stores/auth";
 
-export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+// Same-origin by default: the Vite dev proxy and the Vercel rewrite both serve
+// the API under /api, so a relative base works in dev AND production. An
+// absolute localhost fallback would make the deployed SPA call the visitor's
+// own machine. Override VITE_API_URL only for a split-origin deploy.
+export const API_URL = import.meta.env.VITE_API_URL || "/api/v1";
 
 const api = axios.create({ baseURL: API_URL });
 
