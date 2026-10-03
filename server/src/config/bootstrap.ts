@@ -1,7 +1,9 @@
 import { User, hashPassword } from "../models/User.js";
 import { Lesson } from "../models/Lesson.js";
+import { SoftwareHouse } from "../models/SoftwareHouse.js";
 import { getSettings } from "../models/Settings.js";
 import { LESSONS } from "../data/lessons.js";
+import { SOFTWARE_HOUSES } from "../data/softwareHouses.js";
 
 /** Idempotent startup data: default admin (if none), canonical lessons, settings. */
 export async function bootstrapDevData(): Promise<void> {
@@ -27,4 +29,12 @@ export async function bootstrapDevData(): Promise<void> {
   }
   await getSettings();
   console.log(`[bootstrap] ${LESSONS.length} lessons ready`);
+
+  const houseCount = await SoftwareHouse.countDocuments({});
+  if (houseCount === 0) {
+    await SoftwareHouse.insertMany(
+      SOFTWARE_HOUSES.map((h) => ({ ...h, addedBy: null, approved: true }))
+    );
+    console.log(`[bootstrap] ${SOFTWARE_HOUSES.length} software houses seeded`);
+  }
 }

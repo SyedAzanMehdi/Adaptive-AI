@@ -1,33 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { Sparkles, AlertTriangle, Check, Crown, CreditCard, Globe2, Fingerprint, Languages } from "lucide-react";
+import { Sparkles, AlertTriangle, Check, Crown, CreditCard } from "lucide-react";
 import api, { apiErrorMessage } from "../../lib/api";
 import { useAuthStore } from "../../stores/auth";
-import { prefersReducedMotion } from "../../lib/anim";
+import { prefersReducedMotion, useReducedMotion } from "../../lib/anim";
 import Reveal from "../../components/Reveal";
 
-const reduce = prefersReducedMotion();
+let reduce = prefersReducedMotion();
 
-interface Region {
-  id: string;
-  name: string;
-  currency: string;
-  price: number;
-}
-
-// Global Access Doctrine: purchasing-power-parity pricing so Adaptive+
-// costs roughly the same slice of income in every market.
-const REGIONS: Region[] = [
-  { id: "pk", name: "Pakistan", currency: "₨", price: 999 },
-  { id: "in", name: "India", currency: "₹", price: 299 },
-  { id: "bd", name: "Bangladesh", currency: "৳", price: 349 },
-  { id: "ng", name: "Nigeria", currency: "₦", price: 2900 },
-  { id: "eg", name: "Egypt", currency: "E£", price: 149 },
-  { id: "id", name: "Indonesia", currency: "Rp", price: 49000 },
-  { id: "br", name: "Brazil", currency: "R$", price: 24.9 },
-  { id: "us", name: "United States & global", currency: "$", price: 9.99 },
-];
+const PRICE_LABEL = "$9.99";
 
 const FREE_FEATURES = [
   "Adaptive diagnostic & Capability Matrix",
@@ -35,32 +17,31 @@ const FREE_FEATURES = [
   "Code mentorship playground & 4-axis grading",
   "Ask AI domain mentor chatbot",
   "System Design Dojo — interview-grade design critiques",
-  "Skill Passport — portable proof of skill for applications abroad",
+  "Interview Rehearsal Studio™ — timed mock loops with a scored trend line",
+  "Application Pipeline™ — response rate and days-to-close, computed for you",
+  "AI-Resilience Score™ — automation exposure and your pivot path",
+  "Freelance Launchpad — matrix-grounded gigs and rate positioning",
 ];
 
 const PREMIUM_FEATURES = [
   "Memory Twin™ — 14-day predictive skill decay forecast",
   "Rescue Reviews — 2-minute stability interventions",
   "Struggle DNA™ — full 4-axis cognitive profile & countermeasures",
-  "Career Autopilot™ — paste any JD, get a 90-day hire-ready plan",
+  "Career Autopilot™ — skill-match %, tiered gap analysis, 90-day plan",
+  "Recruiter Lens™ — how your profile reads in the first pass, and the screen-out risk",
+  "Automated Assessment Generator™ — one targeted probe per weak requirement",
+  "Customized Learning Path + Time-to-Ready ETA™ — the exact hours to job-ready",
   "Priority AI adaptation pipeline & lower latency",
   "All Explorer features included",
 ];
 
 export default function PremiumPage() {
+  reduce = useReducedMotion();
   const { user, setSession } = useAuthStore();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [regionId, setRegionId] = useState(() => localStorage.getItem("edu-region") ?? "pk");
   const navigate = useNavigate();
   const isPremium = user?.plan === "premium";
-  const region = REGIONS.find((r) => r.id === regionId) ?? REGIONS[0];
-  const priceLabel = `${region.currency}${region.price.toLocaleString()}`;
-
-  function selectRegion(id: string) {
-    setRegionId(id);
-    localStorage.setItem("edu-region", id);
-  }
 
   async function subscribe() {
     setBusy(true);
@@ -99,27 +80,6 @@ export default function PremiumPage() {
           {error}
         </div>
       )}
-
-      <Reveal delay={0.05}>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5">
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-700 dark:text-neutral-300">
-            <Globe2 size={14} strokeWidth={2.2} />
-            Global Access fair pricing — your region
-          </span>
-          <select
-            className="input !w-auto text-xs font-semibold"
-            value={regionId}
-            onChange={(e) => selectRegion(e.target.value)}
-            aria-label="Pricing region"
-          >
-            {REGIONS.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name} — {r.currency}{r.price.toLocaleString()}/mo
-              </option>
-            ))}
-          </select>
-        </div>
-      </Reveal>
 
       <div className="grid md:grid-cols-2 gap-8 items-stretch">
         
@@ -172,11 +132,10 @@ export default function PremiumPage() {
               </div>
               <h2 className="text-2xl font-black text-black dark:text-white">Adaptive+</h2>
               <div className="text-3xl sm:text-4xl font-black text-neutral-800 dark:text-neutral-200 my-4 flex items-baseline gap-1">
-                {priceLabel}<span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">/month</span>
+                {PRICE_LABEL}<span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">/month</span>
               </div>
               <p className="text-xs text-neutral-700 dark:text-neutral-300 mb-6 border-b border-black/20 dark:border-white/20 pb-4">
-                Fair regional price for {region.name} — purchasing-power parity
-                {region.id !== "us" ? " (global base: $9.99/mo)" : ""}. Same intelligence, priced for your economy.
+                One plan, one price — the same predictive intelligence for every student.
               </p>
 
               <ul className="space-y-3 text-xs sm:text-sm text-neutral-800 dark:text-neutral-200 mb-8">
@@ -196,54 +155,12 @@ export default function PremiumPage() {
               </div>
             ) : (
               <button className="btn-amber w-full text-xs font-black uppercase tracking-wider" onClick={subscribe} disabled={busy}>
-                {busy ? "Activating Pro Account..." : `Upgrade to Adaptive+ (${priceLabel}/mo)`}
+                {busy ? "Activating Pro Account..." : `Upgrade to Adaptive+ (${PRICE_LABEL}/mo)`}
               </button>
             )}
           </motion.div>
         </Reveal>
       </div>
-
-      <Reveal delay={0.26}>
-        <div className="card !p-6 !bg-black dark:!bg-white !text-white dark:!text-black !border-black dark:!border-white">
-          <div className="flex items-center gap-2 mb-1">
-            <Globe2 size={16} strokeWidth={2.2} />
-            <h2 className="font-bold">Global Access Doctrine™</h2>
-          </div>
-          <p className="text-xs text-neutral-300 dark:text-neutral-700 mb-4 max-w-2xl leading-relaxed">
-            Great education software should not be a luxury import. Three commitments for students in
-            Pakistan, South Asia, Africa, and every emerging market:
-          </p>
-          <div className="grid sm:grid-cols-3 gap-4 text-xs">
-            <div className="rounded-xl border border-white/25 dark:border-black/25 p-3.5">
-              <div className="flex items-center gap-1.5 font-bold mb-1.5">
-                <Globe2 size={13} strokeWidth={2.4} />
-                PPP fair pricing
-              </div>
-              <p className="text-neutral-300 dark:text-neutral-700 leading-relaxed">
-                Adaptive+ costs the same slice of income in Karachi as in San Francisco — local currency, local reality.
-              </p>
-            </div>
-            <div className="rounded-xl border border-white/25 dark:border-black/25 p-3.5">
-              <div className="flex items-center gap-1.5 font-bold mb-1.5">
-                <Languages size={13} strokeWidth={2.4} />
-                Dual-language support (اردو)
-              </div>
-              <p className="text-neutral-300 dark:text-neutral-700 leading-relaxed">
-                Every core CS term anchored in Urdu on the dashboard — learn the concept twice, master it once.
-              </p>
-            </div>
-            <div className="rounded-xl border border-white/25 dark:border-black/25 p-3.5">
-              <div className="flex items-center gap-1.5 font-bold mb-1.5">
-                <Fingerprint size={13} strokeWidth={2.4} />
-                Skill Passport for going abroad
-              </div>
-              <p className="text-neutral-300 dark:text-neutral-700 leading-relaxed">
-                A verifiable, machine-readable record of measured skill — attach it to university and visa applications.
-              </p>
-            </div>
-          </div>
-        </div>
-      </Reveal>
 
       <Reveal delay={0.3}>
         <div className="p-4 rounded-2xl bg-white/60 dark:bg-neutral-950/60 border border-neutral-200 dark:border-neutral-800 text-center text-xs text-neutral-600 dark:text-neutral-400 max-w-xl mx-auto flex items-center justify-center gap-2">

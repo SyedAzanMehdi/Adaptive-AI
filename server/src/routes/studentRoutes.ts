@@ -8,9 +8,8 @@ import {
   diagnosticStart,
   diagnosticAnswer,
   mySubmissions,
-  passport,
-  glossary,
-  scholarships,
+  resilience,
+  fieldRecommendation,
 } from "../controllers/studentController.js";
 
 export const studentRoutes = Router();
@@ -19,9 +18,8 @@ studentRoutes.use(authenticate, requireRole("student", "admin"));
 studentRoutes.get("/me", me);
 studentRoutes.get("/matrix", myMatrix);
 studentRoutes.get("/submissions", mySubmissions);
-studentRoutes.get("/passport", passport);
-studentRoutes.get("/glossary", glossary);
-studentRoutes.get("/scholarships", scholarships);
+studentRoutes.get("/resilience", resilience);
+studentRoutes.get("/field-recommendation", fieldRecommendation);
 
 studentRoutes.post("/diagnostic/start", requireRole("student"), diagnosticStart);
 studentRoutes.post(

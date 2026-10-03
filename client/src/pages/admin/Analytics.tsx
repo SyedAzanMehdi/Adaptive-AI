@@ -1,19 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Tooltip,
-  Legend,
-  type ChartOptions,
-} from "chart.js";
+import type { ChartOptions } from "chart.js";
+import "../../lib/chartSetup";
 import { Bar } from "react-chartjs-2";
 import api from "../../lib/api";
 import { prefersReducedMotion } from "../../lib/anim";
 import { useChartTheme } from "../../lib/chartTheme";
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 interface AnalyticsData {
   users: { students: number; admins: number; suspended: number };

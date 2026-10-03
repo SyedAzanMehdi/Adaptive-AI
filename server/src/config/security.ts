@@ -89,13 +89,45 @@ export function applySecurity(app: Express): void {
       })
     );
     app.use(
+      "/api/v1/student/field-recommendation",
+      rateLimit({
+        windowMs: 15 * 60 * 1000,
+        limit: 15,
+        standardHeaders: true,
+        legacyHeaders: false,
+        message: RATE_LIMIT_BODY("Field recommendation limit reached; try again shortly"),
+      })
+    );
+    app.use(
       "/api/v1/premium/autopilot",
       rateLimit({
         windowMs: 15 * 60 * 1000,
-        limit: 10,
+        // Prefix-matched, so this budget also covers the assessment path below
+        // and every page load's GET. 20 keeps one normal session unblocked.
+        limit: 20,
         standardHeaders: true,
         legacyHeaders: false,
         message: RATE_LIMIT_BODY("Autopilot analysis limit reached; try again shortly"),
+      })
+    );
+    app.use(
+      "/api/v1/premium/autopilot/assessment",
+      rateLimit({
+        windowMs: 15 * 60 * 1000,
+        limit: 8,
+        standardHeaders: true,
+        legacyHeaders: false,
+        message: RATE_LIMIT_BODY("Assessment generation limit reached; try again shortly"),
+      })
+    );
+    app.use(
+      "/api/v1/interview/script",
+      rateLimit({
+        windowMs: 15 * 60 * 1000,
+        limit: 8,
+        standardHeaders: true,
+        legacyHeaders: false,
+        message: RATE_LIMIT_BODY("Rehearsal script limit reached; try again shortly"),
       })
     );
     app.use(
@@ -106,6 +138,16 @@ export function applySecurity(app: Express): void {
         standardHeaders: true,
         legacyHeaders: false,
         message: RATE_LIMIT_BODY("Dojo critique limit reached; try again shortly"),
+      })
+    );
+    app.use(
+      "/api/v1/software-houses",
+      rateLimit({
+        windowMs: 15 * 60 * 1000,
+        limit: 60,
+        standardHeaders: true,
+        legacyHeaders: false,
+        message: RATE_LIMIT_BODY("Software house directory limit reached; try again shortly"),
       })
     );
     app.use(

@@ -16,13 +16,13 @@ import { Line } from "react-chartjs-2";
 import { Compass, Flame, TrendingUp, ArrowRight, BookOpen, Layers, Map } from "lucide-react";
 import { COMPUTING_DOMAINS, DOMAIN_FIELDS, FORECAST_YEARS, fieldOf, topViralDomains } from "../../data/computingDomains";
 import { domainLabel, setDomainFilter } from "../../lib/domains";
-import { prefersReducedMotion } from "../../lib/anim";
+import { prefersReducedMotion, useReducedMotion } from "../../lib/anim";
 import Reveal from "../../components/Reveal";
 import { useChartTheme } from "../../lib/chartTheme";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
-const reduce = prefersReducedMotion();
+let reduce = prefersReducedMotion();
 
 function scoreTone(score: number) {
   if (score >= 90) return "text-neutral-700 dark:text-neutral-300";
@@ -53,6 +53,7 @@ function TrendMeter({ score }: { score: number }) {
 }
 
 export default function DomainCompass() {
+  reduce = useReducedMotion();
   const navigate = useNavigate();
   const ct = useChartTheme();
   const [filter, setFilter] = useState<string>("all");

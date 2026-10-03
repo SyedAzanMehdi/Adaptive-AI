@@ -34,6 +34,14 @@
     overscroll-behavior-y: none;
   }
 
+  /* Visible keyboard-focus ring everywhere — mouse/touch interaction is
+     unaffected since :focus-visible only matches keyboard/programmatic focus. */
+  :focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
   /* Custom sleek scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
@@ -55,6 +63,16 @@
 }
 
 @layer components {
+  .learning-spotlight {
+    @apply rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8 text-black dark:text-white;
+    background: radial-gradient(ellipse at top right, rgb(59 130 246 / 0.12), transparent 65%), linear-gradient(135deg, rgb(245 245 245 / 0.7), rgb(255 255 255 / 0.9));
+  }
+  html.dark .learning-spotlight {
+    background: radial-gradient(ellipse at top right, rgb(59 130 246 / 0.16), transparent 65%), linear-gradient(135deg, #171717, #0a0a0a);
+  }
+  .learning-eyebrow {
+    @apply text-[10px] font-bold uppercase tracking-widest text-blue-700 dark:text-blue-300;
+  }
   /* Monochrome cards */
   .card {
     @apply bg-neutral-950 backdrop-blur-xl rounded-2xl border border-neutral-800 shadow-xl p-5 sm:p-7 transition-all duration-300;
@@ -175,14 +193,24 @@
     @apply bg-black hover:bg-neutral-800 text-white;
   }
 
+  /* Accent CTA — premium upsells and primary save/create actions. Named
+     btn-amber historically; kept for drop-in compatibility at call sites. */
   .btn-amber {
-    @apply inline-flex items-center justify-center gap-2 text-black font-bold px-5 py-2.5 rounded-xl transition-all duration-200 active:scale-[0.98] border border-white;
-    background: #ffffff;
+    @apply inline-flex items-center justify-center gap-2 text-white font-bold px-5 py-2.5 rounded-xl transition-all duration-200 active:scale-[0.98] border border-transparent;
+    background: #3b82f6;
+    box-shadow: 0 4px 20px -6px rgba(59, 130, 246, 0.45);
+  }
+
+  .btn-amber:hover {
+    background: #2563eb;
   }
 
   html.light .btn-amber {
-    @apply text-white border-black;
-    background: #000000;
+    background: #3b82f6;
+  }
+
+  html.light .btn-amber:hover {
+    background: #2563eb;
   }
 
   /* Input fields & Labels */
@@ -203,15 +231,18 @@
     @apply text-neutral-600;
   }
 
-  /* Badges — monochrome */
+  /* Badges */
   .badge-premium {
-    @apply inline-flex items-center gap-1.5 border border-white text-white font-bold text-xs px-3 py-1 rounded-full;
-    background: rgba(255, 255, 255, 0.08);
+    @apply inline-flex items-center gap-1.5 font-bold text-xs px-3 py-1 rounded-full;
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.5);
+    background: rgba(59, 130, 246, 0.1);
   }
 
   html.light .badge-premium {
-    @apply border-black text-black;
-    background: rgba(0, 0, 0, 0.05);
+    color: #2563eb;
+    border-color: rgba(37, 99, 235, 0.4);
+    background: rgba(59, 130, 246, 0.08);
   }
 
   .badge-free {
@@ -229,12 +260,6 @@
 
   .table-scroll > table {
     @apply w-full text-left border-collapse;
-  }
-
-  /* ── hero-field: GSAP animates this from opacity:0 ──
-     Ensure it's always visible as a base (GSAP will override) */
-  .hero-field {
-    opacity: 1;
   }
 }
 

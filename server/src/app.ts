@@ -11,6 +11,9 @@ import { chatRoutes } from "./routes/chatRoutes.js";
 import { premiumRoutes } from "./routes/premiumRoutes.js";
 import { dojoRoutes } from "./routes/dojoRoutes.js";
 import { freelanceRoutes } from "./routes/freelanceRoutes.js";
+import { interviewRoutes } from "./routes/interviewRoutes.js";
+import { applicationRoutes } from "./routes/applicationRoutes.js";
+import { softwareHouseRoutes } from "./routes/softwareHouseRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import { aiMode } from "./services/aiService.js";
 
@@ -48,6 +51,9 @@ export function createApp() {
   app.use("/api/v1/premium", premiumRoutes);
   app.use("/api/v1/dojo", dojoRoutes);
   app.use("/api/v1/freelance", freelanceRoutes);
+  app.use("/api/v1/interview", interviewRoutes);
+  app.use("/api/v1/applications", applicationRoutes);
+  app.use("/api/v1/software-houses", softwareHouseRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

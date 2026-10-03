@@ -5,9 +5,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2 } from "lucide-react";
 import api, { apiErrorMessage } from "../../lib/api";
 import { useAuthStore } from "../../stores/auth";
-import { prefersReducedMotion, SPRING } from "../../lib/anim";
+import { prefersReducedMotion, useReducedMotion, SPRING } from "../../lib/anim";
 
-const reduce = prefersReducedMotion();
+let reduce = prefersReducedMotion();
 
 interface Question {
   prompt: string;
@@ -25,6 +25,7 @@ type Phase =
   | { kind: "error"; message: string };
 
 export default function RescueReview() {
+  reduce = useReducedMotion();
   const user = useAuthStore((s) => s.user);
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const queryClient = useQueryClient();

@@ -170,8 +170,10 @@ by 2036.
 Learning platforms give you a catalog; PathFinder gives you a schedule. A deterministic weekly
 scheduler built from the student's live capability matrix:
 
-- Ranks the five core competencies weakest-first and interleaves them over six focus days with
-  spacing weights 3-2-1-1-1, so the most fragile skill recurs most often.
+- Ranks core competencies by mastery gaps and confidence, distinguishing unmeasured skills
+  from measured weaknesses. The top three priorities recur 3, 2, and 1 times over six days.
+- Adjusts session guidance to a 10–60 minute daily time budget; short sessions emphasize an
+  example and recall, while longer sessions include mentored practice and reflection.
 - Every focus day pairs an adaptive lesson with a mentored exercise, and adds a 2-minute recall
   drill whenever mastery sits below 60%.
 - Day 7 re-baselines: re-run the diagnostic, then the entire next week re-plans itself from the

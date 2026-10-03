@@ -15,10 +15,14 @@ import {
   Crown,
   LogOut,
   Network,
-  Globe2,
-  GraduationCap,
+  Radar,
   Store,
+  Video,
+  ClipboardList,
   ChevronDown,
+  Sparkles,
+  Building2,
+  Library,
 } from "lucide-react";
 import { useAuthStore } from "../stores/auth";
 import { ThemeToggle } from "./ThemeToggle";
@@ -51,8 +55,10 @@ const GROUPS: NavGroup[] = [
     blurb: "Map the path and get unstuck fast",
     items: [
       { to: "/compass", label: "Compass", desc: "64 domains with 10-year demand trends", Icon: Compass },
+      { to: "/field-recommendation", label: "Your Field", desc: "AI picks the best field from your matrix", Icon: Sparkles },
       { to: "/planner", label: "Planner", desc: "Adaptive 7-day study plan", Icon: CalendarDays },
       { to: "/chat", label: "Ask AI", desc: "General mentor chatbot, any topic", Icon: MessageSquare },
+      { to: "/dictionary", label: "Tech Dictionary", desc: "160+ terms, plus the pairs everyone confuses", Icon: Library },
     ],
   },
   {
@@ -61,16 +67,18 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: "/memory", label: "Memory Twin", desc: "Forecast what you will forget", Icon: Activity },
       { to: "/dna", label: "Struggle DNA", desc: "How you fail, and the fix for it", Icon: Dna },
-      { to: "/passport", label: "Passport", desc: "Portable, verifiable skill record", Icon: Globe2 },
+      { to: "/resilience", label: "AI-Resilience", desc: "Your automation exposure and pivot path", Icon: Radar },
     ],
   },
   {
     name: "Career",
     blurb: "Turn proven skill into opportunity",
     items: [
-      { to: "/autopilot", label: "Autopilot", desc: "Paste a JD, get a 90-day plan", Icon: Rocket },
-      { to: "/scholarships", label: "Scholarships", desc: "15 funded programmes, live deadlines", Icon: GraduationCap },
+      { to: "/autopilot", label: "Autopilot", desc: "Paste a JD, get your match % and the plan", Icon: Rocket },
+      { to: "/interview", label: "Rehearsal", desc: "Timed mock loop you score yourself", Icon: Video },
+      { to: "/pipeline", label: "Pipeline", desc: "Track applications and response rate", Icon: ClipboardList },
       { to: "/freelance", label: "Freelance", desc: "Gigs grounded in your matrix", Icon: Store },
+      { to: "/software-houses", label: "Software Houses", desc: "Pakistan & international company directory", Icon: Building2 },
     ],
   },
 ];

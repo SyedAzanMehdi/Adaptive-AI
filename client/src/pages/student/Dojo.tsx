@@ -13,10 +13,11 @@ import {
   Ruler,
 } from "lucide-react";
 import api, { apiErrorMessage } from "../../lib/api";
-import { prefersReducedMotion } from "../../lib/anim";
+import { prefersReducedMotion, useReducedMotion } from "../../lib/anim";
 import Reveal from "../../components/Reveal";
+import ErrorBanner from "../../components/ErrorBanner";
 
-const reduce = prefersReducedMotion();
+let reduce = prefersReducedMotion();
 
 interface DojoChallenge {
   id: string;
@@ -100,6 +101,7 @@ function AxisBar({ label, value }: { label: string; value: number }) {
 }
 
 export default function Dojo() {
+  reduce = useReducedMotion();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
@@ -244,11 +246,7 @@ export default function Dojo() {
               <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-1">
                 {notes.length}/6000 characters — minimum 80 for a meaningful critique.
               </p>
-              {critique.error && (
-                <div className="bg-black/5 dark:bg-white/5 border border-black/20 dark:border-white/20 text-neutral-700 dark:text-neutral-300 rounded-xl p-3.5 mt-3 text-xs font-medium">
-                  {apiErrorMessage(critique.error)}
-                </div>
-              )}
+              {critique.error && <ErrorBanner message={apiErrorMessage(critique.error)} className="mt-3" />}
               <button
                 className="btn-primary mt-4 inline-flex items-center gap-2"
                 disabled={critique.isPending || notes.trim().length < 80}

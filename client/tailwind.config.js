@@ -9,29 +9,28 @@ export default {
         mono: ["'JetBrains Mono'", "monospace"],
       },
       colors: {
-        navy: {
-          DEFAULT: "#0f172a",
-          light: "#1e293b",
-          dark: "#0a0f1d",
-        },
+        // Restrained accent on top of the monochrome base: CTAs, links, and
+        // premium cues. Everything else stays grayscale by design.
         accent: {
           DEFAULT: "#3b82f6",
           hover: "#2563eb",
           light: "#60a5fa",
         },
-        brand: {
-          50: "#eff6ff",
-          100: "#dbeafe",
-          500: "#3b82f6",
-          600: "#2563eb",
-          700: "#1d4ed8",
-          900: "#1e3a8a",
+        // Status hues — used only for gap/developing/strong/unmeasured
+        // indicators so they read at a glance instead of relying solely on
+        // gray weight (a flat monochrome scale is hard to parse for
+        // colorblind/low-vision users).
+        success: {
+          DEFAULT: "#10b981",
+          light: "#34d399",
         },
-        emerald: {
-          glow: "#10b981",
+        warning: {
+          DEFAULT: "#f59e0b",
+          light: "#fbbf24",
         },
-        violet: {
-          glow: "#8b5cf6",
+        danger: {
+          DEFAULT: "#ef4444",
+          light: "#f87171",
         },
       },
       boxShadow: {

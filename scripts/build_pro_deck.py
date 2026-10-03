@@ -1,4 +1,4 @@
-"""Build the professional, animated pitch deck: docs/17_Pro_Pitch_Deck.pptx.
+"""Build the professional, animated pitch deck: hackathon/17_Pro_Pitch_Deck.pptx.
 
 18 slides, monochrome house style, built to impress a technical team lead:
 product depth + engineering rigor + shipped evidence.
@@ -37,7 +37,7 @@ ATTR = "Created by Syed Azan Mehdi Shah"
 SUP = "Supervisor: Mr. Asif Raza — Lecturer, University of Mianwali"
 BRAND = "Adaptive AI Learning Platform · University of Mianwali"
 
-TOTAL = 18
+TOTAL = 19
 
 
 # --- primitives -------------------------------------------------------------
@@ -256,8 +256,8 @@ def build():
     para(cr, SUP, size=13, color=RGBColor(0xB4, 0xB4, 0xB4), space_after=0)
     tg.append(cr)
     band_y = 5.95
-    for i, (num, lab) in enumerate([("14+", "student features shipped"),
-                                    ("40/40", "automated tests green"),
+    for i, (num, lab) in enumerate([("17+", "student features shipped"),
+                                    ("113/113", "automated tests green"),
                                     ("2 × 3", "AI key × model fallback")]):
         stat(s, 0.9 + i * 3.95, band_y, 3.7, 0.95, num, lab, dark=True, num_size=26)
     finish(s, tg)
@@ -269,7 +269,7 @@ def build():
         ("01", "The Problem", "Why static online CS education fails the people who need it most"),
         ("02", "The Solution", "A closed adaptive loop: diagnose, adapt, mentor, remember, convert"),
         ("03", "Signature Innovations", "Memory Twin, Struggle DNA, Career Autopilot, Design Dojo"),
-        ("04", "Opportunity Layer", "Passport, Scholarships, Freelance, Compass, PathFinder"),
+        ("04", "Opportunity Layer & Career Readiness Stack", "Passport, Scholarships, Freelance, Compass, PathFinder, Interview Rehearsal, Pipeline"),
         ("05", "Technology & Reliability", "MERN + TypeScript monorepo, structured AI, security"),
         ("06", "Feasibility & Traction", "What is actually built, verified, and deployment-ready"),
     ]
@@ -398,7 +398,7 @@ def build():
     data = [
         ("Memory Twin™ — skill-decay prediction", "Fits forgetting curves R(t)=e^(−t/S) to real practice history; forecasts 14-day retention; 2-minute Rescue Reviews reinforce a skill before it fades."),
         ("Struggle DNA™ — cognitive phenotyping", "Mines behavior into Resilience, Depth Tolerance, Edge Awareness, and Craft; assigns a struggle archetype and prescribes targeted countermeasures."),
-        ("Career Autopilot™ — JD to 90-day plan", "Paste any job description: importance-weighted gap analysis against the live matrix, a hire-readiness score, and a deterministic 90-day plan."),
+        ("Career Autopilot™ — JD to fit % + 90-day plan", "Paste any job description: importance-weighted fit score against the live matrix, a Recruiter Lens screen-out risk, and a deterministic 90-day plan."),
         ("System Design Dojo™ — interview training", "Six structured challenges graded on a 4-axis interview rubric (Clarify → Estimate → Model → Architect → Scale) with AI critique and history."),
     ]
     for (x, y), (h, b) in zip(positions, data):
@@ -425,7 +425,22 @@ def build():
     tg.append(band)
     finish(s, tg)
 
-    # 11 — Divider 03 -------------------------------------------------------
+    # 11 — Career Readiness Stack --------------------------------------------
+    s = add_slide(prs)
+    tg = header(s, "04 · Career Readiness Stack™", "From ‘what do I need?’ to ‘I got the offer’", n=11)
+    cw, ch = 5.9, 2.2
+    positions = [(0.7, 2.0), (6.73, 2.0), (0.7, 4.35), (6.73, 4.35)]
+    data = [
+        ("Recruiter Lens™ + weighted fit %", "The same JD analysis now reports fit five ways (overall/primary/secondary/technical/soft) and names the single worst must-have as the screen-out risk."),
+        ("Automated Assessment Generator™", "Turns the gap report into a 3-12 item quiz/coding/interview suite where each item targets exactly one weak requirement, with a curated-bank fallback."),
+        ("Interview Rehearsal Studio™ — free", "A role-specific mock loop scored against a deterministic rubric, with a cross-session trend — free for every student, no plan gate."),
+        ("Application Pipeline™ — free", "A 6-stage tracker computing response rate server-side (Saved rows excluded), overdue next-actions, and days-in-stage — also free for every student."),
+    ]
+    for (x, y), (h, b) in zip(positions, data):
+        tg.append(card(s, x, y, cw, ch, h, b, head_size=14, body_size=11))
+    finish(s, tg)
+
+    # 12 — Divider 03 -------------------------------------------------------
     s = add_slide(prs, dark=True)
     tg = []
     wm = textbox(s, 0.75, 0.7, 6.5, 3.2)
@@ -436,14 +451,14 @@ def build():
     para(tt, "Technology & Reliability", size=40, color=WHITE, bold=True, first=True, space_after=8)
     para(tt, "Engineering maturity a team lead can verify, not just admire.", size=16, color=DIM)
     tg.append(tt)
-    footer(s, dark=True, n=11)
+    footer(s, dark=True, n=12)
     finish(s, tg)
 
-    # 12 — Architecture -----------------------------------------------------
+    # 13 — Architecture -----------------------------------------------------
     s = add_slide(prs)
-    tg = header(s, "05 · Architecture", "A clean, layered MERN + TypeScript monorepo", n=12)
+    tg = header(s, "05 · Architecture", "A clean, layered MERN + TypeScript monorepo", n=13)
     layers = [
-        ("Client — React 19 + Vite", "Mobile-first monochrome SPA: the student experience and the admin console, with GSAP / Three.js / Motion and reduced-motion support."),
+        ("Client — React 19 + Vite", "Mobile-first monochrome SPA: the student experience and the admin console, with Three.js and Motion animations (a single engine) and reduced-motion support."),
         ("API — Express 5, strict MVC", "Routes → controllers → services. Issuer-bound JWT, RBAC, plan gating, and Zod request validation at the edge."),
         ("AI services layer", "All Gemini orchestration is isolated here. Structured JSON outputs, a dual-key/model cascade, and a deterministic mock fallback."),
         ("Data — MongoDB / Mongoose", "Users, CapabilityMatrix, Lessons, CodeSubmission, ChatMessage, AuditLog — all validated against schemas shared with the client."),
@@ -462,23 +477,23 @@ def build():
         y += 1.12
     finish(s, tg)
 
-    # 13 — AI reliability ---------------------------------------------------
+    # 14 — AI reliability ---------------------------------------------------
     s = add_slide(prs)
-    tg = header(s, "05 · AI Reliability", "The demo can never fail on stage", n=13)
+    tg = header(s, "05 · AI Reliability", "The demo can never fail on stage", n=14)
     tg.append(bullets(s, [
         ("Structured outputs everywhere", "Every AI call declares a response schema and is Zod-validated before anything is persisted — no free-form AI text in the database."),
         ("Dual-key, multi-model cascade", "On quota or overload, requests roll across 2 API keys × 3 models within a 45-second ceiling, honoring Google's retry hints."),
         ("Deterministic fallback", "No key, or total failure, drops to a mock provider that keeps every feature alive — graceful degradation instead of a 500."),
         ("Prompt-injection safe", "Student input is embedded strictly as data, never as instructions; all prompts are assembled server-side."),
     ], y=2.0, w=7.5, size=14, gap=11))
-    stats = [("2 × 3", "key × model fallback cascade"), ("45s", "hard ceiling per AI request"), ("40/40", "automated tests green")]
+    stats = [("2 × 3", "key × model fallback cascade"), ("45s", "hard ceiling per AI request"), ("113/113", "automated tests green")]
     for i, (num, lab) in enumerate(stats):
         stat(s, 8.45, 2.0 + i * 1.42, 4.18, 1.25, num, lab, num_size=28)
     finish(s, tg)
 
-    # 14 — Security & quality ----------------------------------------------
+    # 15 — Security & quality ----------------------------------------------
     s = add_slide(prs)
-    tg = header(s, "05 · Security & Quality", "Production posture, verified", n=14)
+    tg = header(s, "05 · Security & Quality", "Production posture, verified", n=15)
     col_header(s, 0.7, 2.0, 5.9, "Security")
     tg.append(bullets(s, [
         "Issuer-bound JWT access + refresh tokens",
@@ -490,7 +505,7 @@ def build():
     ], x=0.7, y=2.5, w=5.85, h=4.1, size=13, gap=8))
     col_header(s, 6.78, 2.0, 5.85, "Quality")
     tg.append(bullets(s, [
-        "40/40 Vitest + Supertest integration tests",
+        "113/113 Vitest + Supertest integration tests",
         "Full RBAC matrix and ownership coverage",
         "WCAG-AA contrast audit on every route, dark + light",
         "Responsive, mobile-first across breakpoints",
@@ -499,7 +514,7 @@ def build():
     ], x=6.78, y=2.5, w=5.85, h=4.1, size=13, gap=8))
     finish(s, tg)
 
-    # 15 — Divider 04 -------------------------------------------------------
+    # 16 — Divider 04 -------------------------------------------------------
     s = add_slide(prs, dark=True)
     tg = []
     wm = textbox(s, 0.75, 0.7, 6.5, 3.2)
@@ -510,13 +525,13 @@ def build():
     para(tt, "Feasibility & Traction", size=40, color=WHITE, bold=True, first=True, space_after=8)
     para(tt, "Not a concept deck — a shipped, running, tested product.", size=16, color=DIM)
     tg.append(tt)
-    footer(s, dark=True, n=15)
+    footer(s, dark=True, n=16)
     finish(s, tg)
 
-    # 16 — What's actually built -------------------------------------------
+    # 17 — What's actually built -------------------------------------------
     s = add_slide(prs)
-    tg = header(s, "06 · What's Built", "Shipped end-to-end and running today", n=16)
-    tiles = [("14+", "student features"), ("40/40", "tests passing"), ("5", "matrix domains"),
+    tg = header(s, "06 · What's Built", "Shipped end-to-end and running today", n=17)
+    tiles = [("17+", "student features"), ("113/113", "tests passing"), ("5", "matrix domains"),
              ("64", "Compass domains"), ("15", "scholarships"), ("2", "AI keys cascaded")]
     tw = 1.87
     for i, (num, lab) in enumerate(tiles):
@@ -527,15 +542,16 @@ def build():
         "Adaptive diagnostics, self-rewriting lessons, code playground, and the AI mentor chat",
         "Memory Twin, Struggle DNA, Career Autopilot, and the System Design Dojo",
         "Skill Passport, Scholarship Radar, Freelance Launchpad, Domain Compass, and PathFinder",
+        "Career Readiness Stack: Recruiter Lens, Assessment Generator, Interview Rehearsal Studio, Application Pipeline",
         "Deployment-ready Vercel serverless adapter (same-origin, no CORS) awaiting production wiring",
-    ], x=0.7, y=4.2, w=11.93, h=2.5, size=13.5, gap=9))
+    ], x=0.7, y=4.2, w=11.93, h=2.5, size=13, gap=7))
     finish(s, tg)
 
-    # 17 — Roadmap & the ask ------------------------------------------------
+    # 18 — Roadmap & the ask ------------------------------------------------
     s = add_slide(prs)
-    tg = header(s, "06 · Roadmap & Ask", "A clear, staged path from here", n=17)
+    tg = header(s, "06 · Roadmap & Ask", "A clear, staged path from here", n=18)
     phases = [
-        ("Now — Shipped", "Complete MVP running end-to-end, 40/40 tests, and a deployment-ready serverless build."),
+        ("Now — Shipped", "Complete MVP running end-to-end, 113/113 tests, and a deployment-ready serverless build."),
         ("Next — Live", "Production deploy on Vercel + MongoDB Atlas, and Stripe billing for the premium tier."),
         ("Then — Retention", "Decay-alert notifications, streaks, and an institutional B2B2C dashboard for cohorts."),
         ("Later — Network", "Marketplace and university partnerships behind the Radar, Launchpad, and Passport."),
@@ -556,7 +572,7 @@ def build():
     tg.append(band)
     finish(s, tg)
 
-    # 18 — Closing ----------------------------------------------------------
+    # 19 — Closing ----------------------------------------------------------
     s = add_slide(prs, dark=True)
     tg = []
     t = textbox(s, 0.9, 2.0, 11.5, 2.4)
@@ -570,11 +586,11 @@ def build():
     para(cr, SUP, size=13.5, color=RGBColor(0xB4, 0xB4, 0xB4), space_after=10)
     para(cr, "Live demo and questions welcome.", size=13, color=GRAY_S, italic=True, space_after=0)
     tg.append(cr)
-    footer(s, dark=True, n=18)
+    footer(s, dark=True, n=19)
     finish(s, tg)
 
-    prs.save("docs/17_Pro_Pitch_Deck.pptx")
-    print(f"OK docs/17_Pro_Pitch_Deck.pptx ({len(prs.slides._sldIdLst)} slides)")
+    prs.save("hackathon/17_Pro_Pitch_Deck.pptx")
+    print(f"OK hackathon/17_Pro_Pitch_Deck.pptx ({len(prs.slides._sldIdLst)} slides)")
 
 
 if __name__ == "__main__":

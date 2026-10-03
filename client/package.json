@@ -17,7 +17,6 @@
     "@types/three": "^0.185.4",
     "axios": "^1.7.7",
     "chart.js": "^4.5.1",
-    "gsap": "^3.15.0",
     "lucide-react": "^1.37.0",
     "motion": "^13.1.1",
     "react": "^19.0.0",

@@ -145,8 +145,9 @@ export async function generateJson(opts: {
           const reason = err instanceof Error ? err.message : String(err);
           console.warn(`[ai] attempt failed (key ${slot}, ${model}): ${reason.slice(0, 140)}`);
           if (isQuotaError(err)) {
-            if (retry === 0) {
-              await sleep(quotaRetryMs(err));
+            const waitMs = quotaRetryMs(err);
+            if (retry === 0 && Date.now() + waitMs < deadline) {
+              await sleep(waitMs);
               continue;
             }
           } else if (isOverloadError(err)) {
@@ -155,6 +156,7 @@ export async function generateJson(opts: {
             throw err;
           }
         }
+        if (Date.now() > deadline) throw lastErr;
       }
       if (Date.now() > deadline) throw lastErr;
     }

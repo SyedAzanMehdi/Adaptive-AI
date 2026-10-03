@@ -25,11 +25,12 @@ Guidance for AI coding agents (and human contributors) working in this repositor
 | `server/src/routes/` | Route definitions |
 | `server/src/controllers/` | Request handling; input validation |
 | `server/src/middleware/` | `authMiddleware` (authenticate/requireRole/**requirePlan**), ownership, errors |
-| `server/src/models/` | Mongoose schemas (User, CapabilityMatrix, Lesson, CodeSubmission, AuditLog, **ChatMessage**) |
-| `server/src/services/` | **All Gemini/AI orchestration lives here** (diagnostic, adaptation, evaluation, matrix, **chat, memory, dna**, mock) |
-| `server/src/data/` | Seed content: lessons, exercises, **knowledgeBase (chat fallback)** |
+| `server/src/models/` | Mongoose schemas (User, CapabilityMatrix, Lesson, CodeSubmission, ChatMessage, AutopilotPlan, DesignCritique, FreelanceProfile, **Application, InterviewSession**, AuditLog, Settings) |
+| `server/src/services/` | **All Gemini/AI orchestration lives here** (aiService, diagnostic, adaptation, evaluation, matrix, chat, memory, dna, autopilot, **assessment, interview**, dojo, resilience, freelance, **pipeline**, mockAi) |
+| `server/src/data/` | Seed + curated fallback content: lessons, exercises, knowledgeBase (chat fallback), **skillTaxonomy, assessmentBank, interviewQuestions, learningResources**, dojoChallenges, aiFrontier |
 | `shared/src/schemas.ts` | Zod schemas shared by client + server (requests + AI outputs) |
-| `docs/` | PRD, technical docs, manuals, MVP roadmap, decks |
+| `docs/` | Technical docs, manuals, MVP roadmap, QA scripts |
+| `hackathon/` | Hackathon submission set: PRD, Technical Doc, User Manual, Unique Features, QA Test Plan + Report, and the Hackathon/Pro/Investor pitch decks |
 
 ## Hard Rules
 
@@ -54,22 +55,42 @@ Guidance for AI coding agents (and human contributors) working in this repositor
 
 ## Adding a New AI Feature — Checklist
 
-1. Schema in `server/utils/schemas.js`
-2. Service function in `server/services/*Service.js` with fallback path
-3. Controller + route with correct auth/RBAC middleware
-4. Rate limiting for user-triggered endpoints
-5. Tests: mocked Gemini client + RBAC matrix entry
+1. Zod request + AI-output schemas in `shared/src/schemas.ts`
+2. Service function in `server/src/services/*Service.ts` with a fallback path
+3. Curated fallback data in `server/src/data/` when the feature needs a bank to degrade to
+4. Controller + route with correct auth/RBAC middleware
+5. Rate limiting for user-triggered endpoints (`server/src/config/security.ts`)
+6. Tests: mocked Gemini client + RBAC matrix entry
 
 ## Commands
 
 ```bash
-npm install && cd client && npm install   # install
-npm run dev                               # API server (port 5000)
-cd client && npm run dev                  # React SPA (port 5173)
+npm install                               # installs all three workspaces (shared, server, client)
+npm run dev:server                        # API server (port 5000)
+npm run dev:client                        # React SPA (port 5173)
+npm run build                             # client production build (tsc -b && vite build)
+npm run start                             # server without watch
 npm run seed:admin -- --email <e> --password <p>
-npm test                                  # unit + integration
-npm run test:ai                           # AI services (mocked)
+npm run seed:lessons
+npm test                                  # vitest run (unit + integration, ephemeral DB)
 ```
+
+Type-checking is per workspace, not a root script: `cd server && npx tsc --noEmit` and
+`cd client && npx tsc --noEmit`.
+
+### Database
+
+The variable is **`MONGO_URI`**, not `MONGODB_URI`. When it is blank (and `NODE_ENV` is not
+`production`) the server falls back to an embedded MongoDB persisted at `server/mongo-data/`;
+tests always run against a fresh ephemeral instance. Append the database name to the URI —
+`mongodb://127.0.0.1:27017/adaptive_learning` — because without the path Mongoose defaults the
+database to `test`.
+
+A dev server killed without a clean shutdown leaves `server/mongo-data/mongod.lock` behind.
+`connectDB()` reads the PID out of that lock and only removes it when the owning process is
+genuinely gone; if the PID belongs to another user or elevation level the check reads as "alive"
+and boot fails with a DBPathInUse message. Point `EMBEDDED_DB_PATH` elsewhere, or set a real
+`MONGO_URI`, rather than deleting the lock by hand.
 
 ## Definition of Done
 
@@ -81,6 +102,6 @@ npm run test:ai                           # AI services (mocked)
 
 ## Reference Documents
 
-- `docs/01_PRD.md` — requirements and acceptance criteria
-- `docs/02_Technical_Documentation.md` — architecture and data models
+- `hackathon/01_PRD.md` — requirements and acceptance criteria
+- `hackathon/02_Technical_Documentation.md` — architecture and data models
 - `docs/03_Manual_Guide.md` — setup, scripts, troubleshooting

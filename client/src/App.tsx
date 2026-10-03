@@ -15,19 +15,24 @@ const Playground = lazy(() => import("./pages/student/Playground"));
 const DomainCompass = lazy(() => import("./pages/student/DomainCompass"));
 const Planner = lazy(() => import("./pages/student/Planner"));
 const Autopilot = lazy(() => import("./pages/student/Autopilot"));
+const Interview = lazy(() => import("./pages/student/Interview"));
+const Pipeline = lazy(() => import("./pages/student/Pipeline"));
 const Dojo = lazy(() => import("./pages/student/Dojo"));
-const Passport = lazy(() => import("./pages/student/Passport"));
-const Scholarships = lazy(() => import("./pages/student/Scholarships"));
+const Resilience = lazy(() => import("./pages/student/Resilience"));
 const Freelance = lazy(() => import("./pages/student/Freelance"));
 const Chat = lazy(() => import("./pages/student/Chat"));
 const PremiumPage = lazy(() => import("./pages/student/PremiumPage"));
 const MemoryTwin = lazy(() => import("./pages/student/MemoryTwin"));
 const RescueReview = lazy(() => import("./pages/student/RescueReview"));
 const StruggleDNA = lazy(() => import("./pages/student/StruggleDNA"));
+const FieldRecommendation = lazy(() => import("./pages/student/FieldRecommendation"));
+const SoftwareHouses = lazy(() => import("./pages/student/SoftwareHouses"));
+const TechDictionary = lazy(() => import("./pages/student/TechDictionary"));
 const Users = lazy(() => import("./pages/admin/Users"));
 const Curriculum = lazy(() => import("./pages/admin/Curriculum"));
 const Analytics = lazy(() => import("./pages/admin/Analytics"));
 const AuditLogPage = lazy(() => import("./pages/admin/AuditLogPage"));
+const AdminSoftwareHouses = lazy(() => import("./pages/admin/SoftwareHouses"));
 
 function PageFallback() {
   return <div className="flex justify-center py-16 text-neutral-600 dark:text-neutral-400">Loading…</div>;
@@ -61,14 +66,18 @@ export default function App() {
             <Route path="compass" element={<DomainCompass />} />
             <Route path="planner" element={<Planner />} />
             <Route path="autopilot" element={<Autopilot />} />
-            <Route path="scholarships" element={<Scholarships />} />
+            <Route path="interview" element={<Interview />} />
+            <Route path="pipeline" element={<Pipeline />} />
             <Route path="freelance" element={<Freelance />} />
-            <Route path="passport" element={<Passport />} />
+            <Route path="resilience" element={<Resilience />} />
             <Route path="chat" element={<Chat />} />
             <Route path="premium" element={<PremiumPage />} />
             <Route path="memory" element={<MemoryTwin />} />
             <Route path="rescue" element={<RescueReview />} />
             <Route path="dna" element={<StruggleDNA />} />
+            <Route path="field-recommendation" element={<FieldRecommendation />} />
+            <Route path="software-houses" element={<SoftwareHouses />} />
+            <Route path="dictionary" element={<TechDictionary />} />
           </Route>
 
           <Route
@@ -84,6 +93,7 @@ export default function App() {
             <Route path="curriculum" element={<Curriculum />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="audit" element={<AuditLogPage />} />
+            <Route path="software-houses" element={<AdminSoftwareHouses />} />
           </Route>
 
           <Route path="*" element={<Navigate to={home} replace />} />

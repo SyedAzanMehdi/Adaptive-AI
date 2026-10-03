@@ -3,9 +3,16 @@
 server/.env
 client/.env
 *.env.local
+.env.*
+**/.env
+**/.env.*
 
 # Local artifacts not needed at runtime
 docs/
 scripts/
 mongo-data/
+server/mongo-data/
+hackathon/
+server/tests/
+**/__pycache__/
 *.log

@@ -121,7 +121,8 @@ Your Memory Twin models how fast you forget each skill, based on your real pract
 ## A11. PathFinder™ Study Planner
 
 1. Open **Planner** in the navigation.
-2. If you've completed the diagnostic, PathFinder builds a personalized 7-day schedule — weakest skills first, spaced so the most fragile skill recurs most often, each focus day pairing a lesson with a mentored exercise.
+2. If you've attempted diagnostic questions, PathFinder builds a personalized 7-day schedule using mastery and confidence. The top three priorities repeat 3, 2, and 1 times over six days; day 7 re-baselines. Unmeasured competencies are labeled as exploration.
+3. Adjust the daily time budget from 10 to 60 minutes to change the session guidance and allocation. Mentored exercise links open the selected challenge directly. Time budgets apply to the current visit and do not record completion.
 3. Day 7 re-baselines: retake the diagnostic and the next week re-plans itself automatically.
 4. New students get a balanced rotation with one click to personalize later.
 

@@ -1,4 +1,5 @@
 export * from "./schemas.js";
+export * from "./careerFields.js";
 
 // Shared plain-TS DTO types used by both client and server.
 export interface ApiError {

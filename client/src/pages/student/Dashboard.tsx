@@ -1,26 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { useState } from "react";
-import {
-  Chart as ChartJS,
-  RadialLinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  Legend,
-  type ChartOptions,
-} from "chart.js";
+import { useMemo } from "react";
+import type { ChartOptions } from "chart.js";
+import "../../lib/chartSetup";
 import { Radar } from "react-chartjs-2";
-import { Brain, Zap, MessageSquare, Target, TrendingUp, ClipboardList, Compass, Dna, Crown, Languages, GraduationCap, Store } from "lucide-react";
+import { Brain, Zap, MessageSquare, Target, TrendingUp, ClipboardList, Compass, Dna, Crown, Radar as RadarIcon, Store } from "lucide-react";
 import api from "../../lib/api";
 import { useAuthStore } from "../../stores/auth";
 import Reveal from "../../components/Reveal";
 import CountUp from "../../components/CountUp";
 import { prefersReducedMotion } from "../../lib/anim";
 import { useChartTheme } from "../../lib/chartTheme";
-
-ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
+import { rankSkills, skillGuidance } from "../../lib/learning";
+import { domainLabel } from "../../lib/domains";
+import ErrorBanner from "../../components/ErrorBanner";
+import { apiErrorMessage } from "../../lib/api";
 
 interface MatrixResponse {
   domains: Record<string, { score: number; confidence: number; attempts: number }>;
@@ -32,32 +26,29 @@ export default function Dashboard() {
   const user = useAuthStore((s) => s.user);
   const reduce = prefersReducedMotion();
   const ct = useChartTheme();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["matrix"],
     queryFn: async () => (await api.get<MatrixResponse>("/student/matrix")).data,
   });
 
-  const [termFilter, setTermFilter] = useState("");
-  const { data: glossaryData } = useQuery({
-    queryKey: ["glossary"],
-    queryFn: async () =>
-      (await api.get<{ glossary: { term: string; urdu: string; roman: string; meaning: string }[] }>("/student/glossary")).data,
-  });
-  const glossary = (glossaryData?.glossary ?? []).filter(
-    (g) =>
-      !termFilter ||
-      g.term.toLowerCase().includes(termFilter.toLowerCase()) ||
-      g.meaning.toLowerCase().includes(termFilter.toLowerCase())
-  );
-
   const domains = data?.domains ?? {};
-  const entries = Object.entries(domains);
-  const labels = entries.map(([domain]) => domain.replace("_", " ").toUpperCase());
-  const scores = entries.map(([, stat]) => Math.round(stat.score * 100));
-  const weak = entries.filter(([, s]) => s.score < 0.6);
-  const average = entries.length
-    ? Math.round((entries.reduce((sum, [, s]) => sum + s.score, 0) / entries.length) * 100)
-    : 0;
+  const { entries, labels, scores, weak, average } = useMemo(() => {
+    const entries = Object.entries(domains).filter(([, signal]) => signal.attempts > 0);
+    return {
+      entries,
+      labels: entries.map(([domain]) => domain.replace("_", " ").toUpperCase()),
+      scores: entries.map(([, stat]) => Math.round(stat.score * 100)),
+      weak: entries.filter(([, s]) => s.score < 0.6),
+      average: entries.length
+        ? Math.round((entries.reduce((sum, [, s]) => sum + s.score, 0) / entries.length) * 100)
+        : 0,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
+  const focus = rankSkills(domains)[0];
+  const guidance = skillGuidance(domains[focus]);
+  const ready = data?.diagnosticStatus === "complete" && entries.length > 0;
 
   const radarData = {
     labels,
@@ -134,6 +125,31 @@ export default function Dashboard() {
           </div>
         </div>
       </Reveal>
+
+      {error && <ErrorBanner message={apiErrorMessage(error)} />}
+      {!isLoading && data && (
+        <Reveal delay={0.05}>
+          <div className="learning-spotlight grid md:grid-cols-[1.6fr_1fr] gap-6">
+            <div>
+              <span className="learning-eyebrow">Your next best move</span>
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight mt-3">
+                {ready ? domainLabel(focus) : data.diagnosticStatus === "in_progress" ? "Finish your capability map" : "Find your starting point"}
+              </h2>
+              <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-300 mt-3 max-w-xl">
+                {ready ? guidance.reason : "A short diagnostic helps your tutor choose the right pace, lessons, and practice for you."}
+              </p>
+              <Link to={ready ? "/planner" : "/diagnostic"} className="btn-primary mt-5 inline-flex">
+                <Zap size={15} /> {ready ? "Build my study session" : data.diagnosticStatus === "in_progress" ? "Continue diagnostic" : "Discover my level"}
+              </Link>
+            </div>
+            <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white/70 dark:bg-black/30 p-5 flex flex-col justify-center">
+              <span className="learning-eyebrow">{ready ? guidance.label : "A plan that learns with you"}</span>
+              <div className="text-4xl font-black mt-3">{ready && domains[focus]?.attempts > 0 ? `${Math.round(domains[focus].score * 100)}%` : "Learn → Try → Grow"}</div>
+              <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-3">{ready ? "Prioritized by mastery and confidence. Each diagnostic answer and code submission refreshes your next step." : "Measure your skills, study at your level, and turn feedback into progress."}</p>
+            </div>
+          </div>
+        </Reveal>
+      )}
 
       {/* Quick Stats Grid */}
       {entries.length > 0 && (
@@ -244,7 +260,7 @@ export default function Dashboard() {
               <h2 className="font-bold text-base text-black dark:text-white mb-3">Priority Focus Areas</h2>
               {weak.length === 0 ? (
                 <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                  All competencies are performing at or above target threshold (≥60%).
+                  {entries.length === 0 ? "Complete a diagnostic to discover your focus areas." : "Measured competencies are performing at or above 60%. Unmeasured skills still need a diagnostic."}
                 </p>
               ) : (
                 <div className="space-y-2.5">
@@ -259,41 +275,6 @@ export default function Dashboard() {
               <Link to="/lessons" className="btn-secondary w-full text-center text-xs mt-4">
                 Browse Adapted Lessons
               </Link>
-            </div>
-          </Reveal>
-
-          <Reveal delay={0.32}>
-            <div className="card">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-bold text-base text-black dark:text-white flex items-center gap-2">
-                  <Languages size={16} strokeWidth={2.2} />
-                  Dual-Language Helper
-                </h2>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">اردو</span>
-              </div>
-              <input
-                className="input text-xs mb-3"
-                placeholder="Search a term…"
-                value={termFilter}
-                onChange={(e) => setTermFilter(e.target.value)}
-              />
-              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                {glossary.length === 0 ? (
-                  <p className="text-xs text-neutral-500">No matching terms.</p>
-                ) : (
-                  glossary.map((g) => (
-                    <div key={g.term} className="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/20 dark:border-white/20">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">{g.term}</span>
-                        <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300" dir="rtl">
-                          {g.urdu}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-1 leading-relaxed">{g.meaning}</p>
-                    </div>
-                  ))
-                )}
-              </div>
             </div>
           </Reveal>
         </div>
@@ -350,21 +331,21 @@ export default function Dashboard() {
         </Reveal>
       </div>
 
-      {/* Global Opportunity Layer */}
+      {/* Career Signals */}
       <div className="grid md:grid-cols-2 gap-6">
         <Reveal delay={0.44}>
-          <Link to="/scholarships" className="card card-hover block relative group overflow-hidden bg-gradient-to-br from-neutral-100 dark:from-neutral-900 via-white/40 dark:via-neutral-950/40 to-neutral-100 dark:to-neutral-900">
+          <Link to="/resilience" className="card card-hover block relative group overflow-hidden bg-gradient-to-br from-neutral-100 dark:from-neutral-900 via-white/40 dark:via-neutral-950/40 to-neutral-100 dark:to-neutral-900">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-black/5 dark:bg-white/5 border border-black/20 dark:border-white/20 text-neutral-600 dark:text-neutral-400 flex items-center justify-center">
-                  <GraduationCap size={18} strokeWidth={2} />
+                  <RadarIcon size={18} strokeWidth={2} />
                 </div>
-                <h2 className="font-bold text-black dark:text-white text-lg group-hover:text-neutral-700 dark:group-hover:text-neutral-300 transition-colors">Scholarship Radar™</h2>
+                <h2 className="font-bold text-black dark:text-white text-lg group-hover:text-neutral-700 dark:group-hover:text-neutral-300 transition-colors">AI-Resilience Score™</h2>
               </div>
               <span className="badge-free">Free for all</span>
             </div>
             <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              Fully funded international scholarships with live deadline countdowns — curated for students in Pakistan and the Global South planning to study abroad.
+              See which of your skills AI is most likely to automate, and the smallest step to the nearest future-proof role.
             </p>
           </Link>
         </Reveal>

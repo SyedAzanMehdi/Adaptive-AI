@@ -123,9 +123,12 @@ npm run seed:admin -- --email admin@example.com --password '<strong-password>'
 | Request handling / validation | `server/src/controllers/` |
 | All Gemini calls | `server/src/services/` (**never** in controllers) |
 | Chat / Memory Twin / Struggle DNA | `server/src/services/chatService.ts`, `memoryService.ts`, `dnaService.ts` |
-| Autopilot / Dojo / Passport | `server/src/services/autopilotService.ts`, `dojoService.ts`, `passportService.ts` |
-| Scholarship Radar / Freelance | `server/src/services/scholarshipService.ts`, `freelanceService.ts` |
-| Scholarship seed data | `server/src/data/scholarships.ts` |
+| Autopilot / Dojo / AI-Resilience | `server/src/services/autopilotService.ts`, `dojoService.ts`, `resilienceService.ts` |
+| Assessment Generator / Learning Path | `server/src/services/assessmentService.ts` (Autopilot's gap report is its input) |
+| Interview Rehearsal / Application Pipeline | `server/src/services/interviewService.ts`, `pipelineService.ts` |
+| Freelance Launchpad | `server/src/services/freelanceService.ts` |
+| AI-Resilience frontier data | `server/src/data/aiFrontier.ts` (the dataset to re-tune as AI capability advances) |
+| Curated fallback banks (skills, probes, interview questions, resources) | `server/src/data/skillTaxonomy.ts`, `assessmentBank.ts`, `interviewQuestions.ts`, `learningResources.ts` |
 | Mongoose schemas | `server/src/models/` |
 | Auth, RBAC & plan gating | `server/src/middleware/authMiddleware.ts` |
 | Helmet CSP, CORS, rate limits | `server/src/config/security.ts` (only place to change them) |
@@ -141,11 +144,19 @@ npm run seed:admin -- --email admin@example.com --password '<strong-password>'
 
 ### 3.3 Adding a new AI feature (checklist)
 
-1. Define the JSON output schema in `shared/src/schemas.ts`.
+1. Define the request schema **and** the JSON output schema in `shared/src/schemas.ts`.
 2. Implement the orchestration in a `server/src/services/*Service.ts` function.
-3. Add a fallback path (cached or canonical content) for timeout/schema failure.
+3. Add a fallback path (cached or canonical content) for timeout/schema failure. When the
+   feature needs a bank to degrade to, put it in `server/src/data/` — every career feature
+   ships with one so it still answers with no API key at all.
 4. Expose it via a controller + route with the correct auth/RBAC middleware.
 5. Add a rate limit in `server/src/config/security.ts` if the endpoint is user-triggered.
+6. Add tests: mocked Gemini client, plus an RBAC-matrix entry for the route.
+7. If the response carries a derived field (a duration, a total, a percentage), return it on
+   **every** handler that serves the resource — `POST` *and* `GET`. The client renders from
+   whichever response it happens to hold, so a field missing from the reload path silently
+   blanks the UI. Type-checking will not catch it, because the client mirrors APIs with its
+   own local interfaces.
 
 ---
 
@@ -157,9 +168,20 @@ npm run seed:admin -- --email admin@example.com --password '<strong-password>'
 | `npm run dev:client` | Start the Vite React SPA (workspace `@edu/client`) |
 | `npm start` | Production server |
 | `npm run seed:admin` | Provision an admin user |
-| `npm test` | Run unit + integration tests (server) |
+| `npm run seed:lessons` | Load the curated lesson + exercise bank |
+| `npm test` | Run the server suite — 112 Vitest + Supertest tests across `tests/rbac.test.ts` (72) and `tests/careerStack.test.ts` (40) |
 | `npm run build` | Build the React SPA to `client/dist` |
 | `bash scripts/qa_api.sh` | 52-check live end-to-end API QA against the running server |
+
+There is no root typecheck script. Run it per workspace:
+
+```bash
+cd server && npx tsc --noEmit
+cd client && npx tsc --noEmit
+```
+
+> These are the only seven root scripts. `npm run dev` and `npm run test:ai` do **not**
+> exist — older notes that mention them are stale.
 
 ---
 
@@ -171,9 +193,32 @@ npm run seed:admin -- --email admin@example.com --password '<strong-password>'
 | Integration | Supertest against Express app with in-memory MongoDB |
 | RBAC | Matrix tests: student/admin × every route (expect 200/403) |
 | AI contract | Assert structured-output parsing and fallback on malformed responses |
+| Career stack | `tests/careerStack.test.ts` (40 tests) pins the deterministic maths across eight groups: skill match and fit percentage, gap analysis, recruiter lens, automated assessment generator, customized learning path, interview rehearsal studio, application pipeline, and hydrating a stored gap report (so Autopilot plans saved before these fields existed still load) |
 | E2E | Diagnostic → lesson adaptation → code submission loop in a seeded environment |
 
 ---
+
+## Adaptive study experience (2026-10-02)
+
+The dashboard's **Your next best move** panel recommends completing an unfinished
+diagnostic or focusing on a competency. Only attempted domains count toward average
+mastery; unmeasured competencies are shown as exploration, not failure.
+
+**Adaptive Lessons** sorts the visible catalog by mastery gaps and confidence.
+Each lesson explains whether to build foundations, confirm progress, or stretch
+your skills. Your domain filter still controls which lessons are visible.
+
+In **PathFinder**, adjust the daily time budget from 10 to 60 minutes. Short
+sessions focus on an example and recall; longer sessions include practice and
+reflection. The plan revisits the three highest priorities on a 3/2/1 schedule
+over six days, then uses day 7 to re-baseline. With no measured evidence, it uses
+a balanced rotation. The slider applies to the current visit; it does not record
+study completion or promise a readiness date.
+
+Choose a **Mentored exercise** to open its challenge and starter code directly.
+New diagnostic answers and code feedback refresh the matrix, cached lesson
+responses, and resilience report. Recommendations use existing signals and remain
+available when Gemini falls back to the deterministic provider.
 
 ## 6. Deployment
 
@@ -201,7 +246,9 @@ The API is stateless: redeploy the previous build; MongoDB schema changes must b
 | Structured output rejected | Schema mismatch | Compare AI response against `shared/src/schemas.ts`; lower temperature |
 | Cross-user data visible | Missing ownership guard | Add object-level check in controller; review RBAC matrix tests |
 | 402 PREMIUM_REQUIRED | Free token hitting a gated route | Expected behavior; upgrade flow or admin grant sets the plan claim (requires re-login/token refresh) |
-| 429 on login/register/chat/autopilot/dojo/freelance | Rate limiter tripped | Window resets automatically; tune limits in `src/config/security.ts` |
+| 429 on a user-triggered route | Rate limiter tripped. Budgets: global 300/15min, login 10/15min, register 20/hr, `/premium/autopilot` 20/15min (**prefix-matched**, so it also covers the assessment route and every page-load read), assessment 8/15min, `/interview/script` 8/15min, `/dojo/critique` 10/15min, `/freelance/generate` 10/15min, chat 60/15min | Window resets automatically; tune limits in `src/config/security.ts` — **except** the chat limiter, which is declared locally in `routes/chatRoutes.ts`. All limiters are disabled when `NODE_ENV === "test"` |
+| 409 when saving an application | `{ userId, company, role }` carries a unique index | Edit the existing row instead of adding a second one; the constraint is what stops the pipeline filling with duplicates |
+| Embedded-MongoDB boot dies after ~8s with a lock error | `server/mongo-data/mongod.lock` names a PID that no longer exists but cannot be probed (`EPERM`), and `isPidAlive()` treats `EPERM` as *alive*, so `clearStaleLock` never clears it | Point `EMBEDDED_DB_PATH` at a fresh directory, or set a real `MONGO_URI` and skip the embedded path entirely. Do not delete the lock file by hand |
 | Asset blocked in production | CSP too strict | Check the Network tab for the violated directive; adjust allow-list in `config/security.ts` |
 
 ---

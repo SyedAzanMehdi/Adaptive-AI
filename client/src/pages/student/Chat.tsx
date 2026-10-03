@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
-import { Lightbulb, MessageSquare, Send, Sparkles, Trash2 } from "lucide-react";
+import { Lightbulb, MessageSquare, Send, Sparkles, Trash2, AlertTriangle } from "lucide-react";
 import api, { apiErrorMessage } from "../../lib/api";
-import { prefersReducedMotion } from "../../lib/anim";
+import { prefersReducedMotion, useReducedMotion } from "../../lib/anim";
+import { useAuthStore } from "../../stores/auth";
+import { ChatMessageContent } from "../../components/ChatMessageContent";
 
-const reduce = prefersReducedMotion();
+let reduce = prefersReducedMotion();
 
 interface ChatMsg {
   id: string;
@@ -23,6 +25,14 @@ const SUGGESTIONS = [
   "How does this platform adapt lessons?",
 ];
 
+function formatTime(iso: string) {
+  try {
+    return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  } catch {
+    return "";
+  }
+}
+
 function TypingDots() {
   return (
     <div className="flex items-center gap-1.5 px-4 py-3">
@@ -38,11 +48,31 @@ function TypingDots() {
   );
 }
 
+function Avatar({ role, initial }: { role: "user" | "assistant"; initial: string }) {
+  if (role === "assistant") {
+    return (
+      <div className="w-7 h-7 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center shrink-0 shadow-md">
+        <Sparkles size={13} strokeWidth={2.4} />
+      </div>
+    );
+  }
+  return (
+    <div className="w-7 h-7 rounded-full bg-neutral-300 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-100 flex items-center justify-center shrink-0 text-[11px] font-bold uppercase shadow-md">
+      {initial}
+    </div>
+  );
+}
+
 export default function Chat() {
+  reduce = useReducedMotion();
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
+  const [degraded, setDegraded] = useState(false);
   const queryClient = useQueryClient();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const userName = useAuthStore((s) => s.user?.name) ?? "You";
+  const userInitial = userName.trim().charAt(0).toUpperCase() || "U";
 
   const { data } = useQuery({
     queryKey: ["chat-history"],
@@ -58,6 +88,7 @@ export default function Chat() {
         degraded?: boolean;
       },
     onMutate: async (message) => {
+      setDegraded(false);
       await queryClient.cancelQueries({ queryKey: ["chat-history"] });
       const prev = queryClient.getQueryData<{ messages: ChatMsg[] }>(["chat-history"]);
       queryClient.setQueryData<{ messages: ChatMsg[] }>(["chat-history"], (old) => ({
@@ -68,8 +99,9 @@ export default function Chat() {
       }));
       return prev;
     },
-    onSuccess: () => {
+    onSuccess: (resData) => {
       queryClient.invalidateQueries({ queryKey: ["chat-history"] });
+      setDegraded(Boolean(resData.degraded));
     },
     onError: (err, _msg, context) => {
       if (context) queryClient.setQueryData(["chat-history"], context);
@@ -83,17 +115,25 @@ export default function Chat() {
     bottomRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
   }, [messages.length, send.isPending]);
 
+  function autoResize() {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 144)}px`;
+  }
+
   function submit(text?: string) {
     const message = (text ?? input).trim();
     if (!message || send.isPending) return;
     setError("");
     setInput("");
     send.mutate(message);
+    requestAnimationFrame(autoResize);
   }
 
   return (
     <div className="mx-auto flex h-[calc(100dvh-10.5rem)] min-h-[460px] max-w-5xl flex-col overflow-hidden rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white/90 dark:bg-neutral-950/90 backdrop-blur-2xl shadow-2xl">
-      
+
       {/* Chat Header */}
       <header className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 bg-neutral-100/80 dark:bg-neutral-900/80 px-4 py-3.5 backdrop-blur-xl sm:px-6">
         <div className="flex items-center gap-3">
@@ -148,36 +188,50 @@ export default function Chat() {
           </div>
         )}
 
-        <div className="mx-auto max-w-3xl space-y-4">
+        <div className="mx-auto max-w-3xl space-y-5">
           <AnimatePresence initial={false}>
-            {messages.map((m) => (
-              <motion.div
-                key={m.id}
-                initial={reduce ? {} : { y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed shadow-lg ${
-                    m.role === "user"
-                      ? "bg-black dark:bg-white text-white dark:text-black rounded-br-none"
-                      : "bg-neutral-100/90 dark:bg-neutral-900/90 border border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-bl-none"
-                  }`}
+            {messages.map((m, idx) => {
+              const isUser = m.role === "user";
+              const prev = messages[idx - 1];
+              const showMeta = !prev || prev.role !== m.role;
+              return (
+                <motion.div
+                  key={m.id}
+                  initial={reduce ? {} : { y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className={`flex gap-2.5 ${isUser ? "flex-row-reverse" : ""}`}
                 >
-                  <div className="whitespace-pre-wrap">{m.content}</div>
-                  {m.role === "assistant" && m.domain && (
-                    <div className="mt-2 inline-flex rounded-full bg-white dark:bg-neutral-950 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-800">
-                      Tag: {m.domain}
+                  <Avatar role={m.role} initial={userInitial} />
+                  <div className={`flex flex-col max-w-[85%] ${isUser ? "items-end" : "items-start"}`}>
+                    {showMeta && (
+                      <span className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+                        {isUser ? "You" : "AI Mentor"} · {formatTime(m.createdAt)}
+                      </span>
+                    )}
+                    <div
+                      className={`rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed shadow-lg ${
+                        isUser
+                          ? "bg-black dark:bg-white text-white dark:text-black rounded-br-none"
+                          : "bg-neutral-100/90 dark:bg-neutral-900/90 border border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-bl-none"
+                      }`}
+                    >
+                      <ChatMessageContent content={m.content} />
+                      {!isUser && m.domain && (
+                        <div className="mt-2 inline-flex rounded-full bg-white dark:bg-neutral-950 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-800">
+                          Tag: {m.domain}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </motion.div>
-            ))}
+                  </div>
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
 
           {send.isPending && (
-            <div className="flex justify-start">
+            <div className="flex gap-2.5">
+              <Avatar role="assistant" initial="A" />
               <div className="rounded-2xl rounded-bl-none bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
                 <TypingDots />
               </div>
@@ -187,6 +241,12 @@ export default function Chat() {
         </div>
       </div>
 
+      {degraded && (
+        <p className="border-t border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1.5">
+          <AlertTriangle size={13} className="shrink-0" />
+          AI mentor is temporarily unavailable — that answer used the curated knowledge base fallback instead.
+        </p>
+      )}
       {error && <p className="border-t border-black/30 dark:border-white/30 bg-black/5 dark:bg-white/5 px-4 py-2 text-xs text-neutral-700 dark:text-neutral-300 font-semibold">{error}</p>}
 
       {/* Input Composer */}
@@ -194,10 +254,14 @@ export default function Chat() {
         <div className="mx-auto max-w-3xl rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-2 shadow-inner">
           <div className="flex items-end gap-2">
             <textarea
+              ref={textareaRef}
               className="max-h-36 min-h-[48px] flex-1 resize-none border-0 bg-transparent px-3 py-2 text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 focus:outline-none"
               placeholder="Ask your AI mentor anything..."
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                autoResize();
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -217,6 +281,10 @@ export default function Chat() {
             </button>
           </div>
         </div>
+        <p className="mx-auto max-w-3xl mt-1.5 px-1 text-[10px] text-neutral-500 flex items-center justify-between">
+          <span>Enter to send · Shift+Enter for a new line</span>
+          <span>{input.length}/2000</span>
+        </p>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { Brain, AlertTriangle, PartyPopper, Check, X } from "lucide-react";
 import api, { apiErrorMessage } from "../../lib/api";
-import { prefersReducedMotion, SPRING } from "../../lib/anim";
+import { prefersReducedMotion, useReducedMotion, SPRING } from "../../lib/anim";
 
 interface Question {
   prompt: string;
@@ -22,7 +22,7 @@ type Phase =
   | { kind: "done"; matrix: Record<string, { score: number }> }
   | { kind: "error"; message: string };
 
-const reduce = prefersReducedMotion();
+let reduce = prefersReducedMotion();
 const slide = reduce
   ? { initial: {}, animate: {}, exit: {}, transition: { duration: 0 } }
   : {
@@ -33,6 +33,7 @@ const slide = reduce
     };
 
 export default function Diagnostic() {
+  reduce = useReducedMotion();
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [busy, setBusy] = useState(false);
   const [maxItems, setMaxItems] = useState(10);
@@ -65,7 +66,9 @@ export default function Diagnostic() {
     setBusy(true);
     try {
       const res = await api.post("/student/diagnostic/answer", { selectedIndex });
-      queryClient.invalidateQueries({ queryKey: ["matrix"] });
+        queryClient.invalidateQueries({ queryKey: ["matrix"] });
+        queryClient.invalidateQueries({ queryKey: ["resilience"] });
+        queryClient.invalidateQueries({ queryKey: ["lesson"] });
       if (res.data.completed) {
         setPhase({ kind: "done", matrix: res.data.matrix });
       } else {

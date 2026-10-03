@@ -1,14 +1,17 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { Map, BookOpen, Code2, MessageSquare, RefreshCcw, Brain, ArrowRight } from "lucide-react";
 import api from "../../lib/api";
 import { DOMAIN_LABELS } from "../../lib/domains";
-import { prefersReducedMotion } from "../../lib/anim";
+import { prefersReducedMotion, useReducedMotion } from "../../lib/anim";
 import Reveal from "../../components/Reveal";
+import { studyRotation, rankSkills, skillGuidance, type SkillSignal } from "../../lib/learning";
+import ErrorBanner from "../../components/ErrorBanner";
+import { apiErrorMessage } from "../../lib/api";
 
-const reduce = prefersReducedMotion();
+let reduce = prefersReducedMotion();
 
 interface MatrixResponse {
   domains: Record<string, { score: number; confidence: number; attempts: number }>;
@@ -35,35 +38,20 @@ interface PlanDay {
   needsRecall: boolean;
 }
 
-const CORE = ["syntax", "oop", "data_structures", "algorithms", "debugging"];
-
 function buildPlan(
-  matrix: Record<string, { score: number }>,
+  matrix: Record<string, SkillSignal>,
   lessons: LessonSummary[],
   exercises: Exercise[]
 ): PlanDay[] {
-  const ranked = [...CORE].sort((a, b) => (matrix[a]?.score ?? 0.5) - (matrix[b]?.score ?? 0.5));
-  const hasSignal = Object.keys(matrix).length > 0;
-
-  // Interleaved spacing: weakest domain repeats most (weights 3,2,1,1,1), days 1-6.
-  const remaining = ranked.map((_, i) => Math.max(1, 3 - i));
-  const focus: string[] = [];
-  let cursor = 0;
-  while (focus.length < 6 && remaining.some((r) => r > 0)) {
-    if (remaining[cursor % ranked.length] > 0) {
-      remaining[cursor % ranked.length] -= 1;
-      focus.push(ranked[cursor % ranked.length]);
-    }
-    cursor += 1;
-  }
+  const focus = studyRotation(matrix);
 
   const days: PlanDay[] = focus.map((domain, i) => ({
     day: i + 1,
     domain,
-    score: hasSignal ? matrix[domain]?.score ?? null : null,
+    score: matrix[domain]?.attempts > 0 ? matrix[domain].score : null,
     lesson: lessons.find((l) => l.domain === domain) ?? null,
     exercise: exercises.find((e) => e.domain === domain) ?? null,
-    needsRecall: (matrix[domain]?.score ?? 1) < 0.6,
+    needsRecall: matrix[domain]?.attempts > 0 && matrix[domain].score < 0.6,
   }));
 
   days.push({ day: 7, domain: null, score: null, lesson: null, exercise: null, needsRecall: false });
@@ -71,15 +59,17 @@ function buildPlan(
 }
 
 export default function Planner() {
-  const { data: matrix } = useQuery({
+  reduce = useReducedMotion();
+  const [minutes, setMinutes] = useState(25);
+  const { data: matrix, isLoading, error } = useQuery({
     queryKey: ["matrix"],
     queryFn: async () => (await api.get<MatrixResponse>("/student/matrix")).data,
   });
-  const { data: lessons } = useQuery({
+  const { data: lessons, isLoading: lessonsLoading, error: lessonsError } = useQuery({
     queryKey: ["lessons"],
     queryFn: async () => (await api.get<{ lessons: LessonSummary[] }>("/lessons")).data.lessons,
   });
-  const { data: exercises } = useQuery({
+  const { data: exercises, isLoading: exercisesLoading, error: exercisesError } = useQuery({
     queryKey: ["exercises"],
     queryFn: async () => (await api.get<{ exercises: Exercise[] }>("/submissions/exercises")).data.exercises,
   });
@@ -88,11 +78,12 @@ export default function Planner() {
     () => buildPlan(matrix?.domains ?? {}, lessons ?? [], exercises ?? []),
     [matrix, lessons, exercises]
   );
-  const personalized = Object.keys(matrix?.domains ?? {}).length > 0;
+  const personalized = Object.values(matrix?.domains ?? {}).some((s) => s.attempts > 0);
   const weakest = useMemo(() => {
     const entries = Object.entries(matrix?.domains ?? {});
     if (entries.length === 0) return null;
-    return entries.sort((a, b) => a[1].score - b[1].score)[0];
+    const domain = rankSkills(matrix?.domains ?? {})[0];
+    return entries.find(([key]) => key === domain) ?? null;
   }, [matrix]);
 
   return (
@@ -123,8 +114,7 @@ export default function Planner() {
               )}
               {weakest && (
                 <span className="inline-flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
-                  Priority signal: {DOMAIN_LABELS[weakest[0] as keyof typeof DOMAIN_LABELS] ?? weakest[0]} at{" "}
-                  {Math.round(weakest[1].score * 100)}% mastery
+                Priority signal: {DOMAIN_LABELS[weakest[0] as keyof typeof DOMAIN_LABELS] ?? weakest[0]} — {weakest[1].attempts > 0 ? `${Math.round(weakest[1].score * 100)}% mastery` : "not measured yet"}
                 </span>
               )}
             </div>
@@ -132,6 +122,21 @@ export default function Planner() {
         </div>
       </Reveal>
 
+      {(error || lessonsError || exercisesError) && <ErrorBanner message={apiErrorMessage(error || lessonsError || exercisesError)} />}
+      <div className="learning-spotlight flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+        <div>
+          <span className="learning-eyebrow">Make room for progress</span>
+          <h2 className="text-xl font-black mt-2">{minutes} minutes, one focused session</h2>
+          <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-2">{minutes <= 15 ? "Start with a worked example and a short recall drill." : minutes <= 30 ? "Learn the idea, then apply it in one mentored exercise." : "Add a second attempt, edge cases, and a reflection on the feedback."}</p>
+        </div>
+        <div className="sm:w-60 shrink-0">
+          <label htmlFor="study-minutes" className="label">Daily time budget: {minutes} min</label>
+          <input id="study-minutes" type="range" min={10} max={60} step={5} value={minutes} onChange={(event) => setMinutes(Number(event.target.value))} className="w-full accent-blue-600" />
+          <div className="flex justify-between text-xs text-neutral-500"><span>10 min</span><span>60 min</span></div>
+        </div>
+      </div>
+
+      {isLoading || lessonsLoading || exercisesLoading ? <p role="status" className="text-sm text-neutral-500">Building your study path…</p> : !error && !lessonsError && !exercisesError && (
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
         {days.map((d, i) => (
           <Reveal key={d.day} delay={reduce ? 0 : 0.08 + i * 0.06}>
@@ -177,6 +182,11 @@ export default function Planner() {
                   <h2 className="font-bold text-black dark:text-white text-base -mt-2">
                     {DOMAIN_LABELS[d.domain as keyof typeof DOMAIN_LABELS] ?? d.domain}
                   </h2>
+                  <div className="rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 p-3">
+                    <p className="learning-eyebrow">{skillGuidance(matrix?.domains[d.domain]).label} · {minutes} min</p>
+                    <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-2 leading-relaxed">{skillGuidance(matrix?.domains[d.domain]).reason}</p>
+                    <p className="text-xs font-semibold mt-2 text-neutral-700 dark:text-neutral-300">{minutes <= 15 ? `${minutes - 3} min example · 3 min recall` : `${Math.round(minutes * 0.35)} min learn · ${minutes - Math.round(minutes * 0.35) - 5} min practice · 5 min reflect`}</p>
+                  </div>
                   <ul className="text-xs text-neutral-700 dark:text-neutral-300 space-y-2.5">
                     {d.lesson && (
                       <li className="flex items-start gap-2">
@@ -189,7 +199,7 @@ export default function Planner() {
                     {d.exercise && (
                       <li className="flex items-start gap-2">
                         <Code2 size={13} strokeWidth={2.2} className="mt-0.5 shrink-0 text-neutral-600 dark:text-neutral-400" />
-                        <Link to="/practice" className="hover:text-black dark:hover:text-white underline underline-offset-2">
+                        <Link to={`/practice?exercise=${encodeURIComponent(d.exercise.exerciseId)}`} className="hover:text-black dark:hover:text-white underline underline-offset-2">
                           Mentored exercise: {d.exercise.title}
                         </Link>
                       </li>
@@ -233,14 +243,15 @@ export default function Planner() {
             </span>
             <h2 className="font-bold text-base -mt-1">The algorithm</h2>
             <ul className="text-xs text-neutral-300 dark:text-neutral-700 space-y-2 leading-relaxed">
-              <li>1. Ranks your five competencies weakest-first from the live matrix.</li>
-              <li>2. Interleaves them over six days with spacing weights 3-2-1-1-1, so fragile skills recur most.</li>
+              <li>1. Ranks competencies by mastery gaps and confidence; unmeasured skills need exploration.</li>
+              <li>2. Revisits the top three priorities 3, 2, and 1 times over six days. Without evidence, rotates across all five domains.</li>
               <li>3. Pairs each focus day with an adaptive lesson, a mentored exercise, and a recall drill when mastery is under 60%.</li>
               <li>4. Day 7 re-baselines with a fresh diagnostic — then the plan rebuilds itself.</li>
             </ul>
           </div>
         </Reveal>
       </div>
+      )}
     </div>
   );
 }

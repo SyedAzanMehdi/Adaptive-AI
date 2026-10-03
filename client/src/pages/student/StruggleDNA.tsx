@@ -13,12 +13,12 @@ import {
 import { Radar } from "react-chartjs-2";
 import { Dna, Lock, Target } from "lucide-react";
 import api from "../../lib/api";
-import { prefersReducedMotion } from "../../lib/anim";
+import { prefersReducedMotion, useReducedMotion } from "../../lib/anim";
 import Reveal from "../../components/Reveal";
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
-const reduce = prefersReducedMotion();
+let reduce = prefersReducedMotion();
 
 interface DnaResponse {
   tier: "free" | "premium";
@@ -31,6 +31,7 @@ interface DnaResponse {
 }
 
 export default function StruggleDNA() {
+  reduce = useReducedMotion();
   const { data, isLoading } = useQuery({
     queryKey: ["struggle-dna"],
     queryFn: async () => (await api.get<DnaResponse>("/premium/dna")).data,

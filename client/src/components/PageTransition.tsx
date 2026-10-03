@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import { motion } from "motion/react";
 import { useLocation } from "react-router-dom";
-import { prefersReducedMotion } from "../lib/anim";
+import { useReducedMotion } from "../lib/anim";
 
 /** Fade/slide page entrance keyed by route, honoring reduced motion. */
 export function PageTransition({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const reduce = prefersReducedMotion();
+  const reduce = useReducedMotion();
   return (
     <motion.div
       key={pathname}

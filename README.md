@@ -5,7 +5,12 @@
 A personalized education platform that acts as a dynamic AI tutor: it diagnoses each
 student with adaptive AI-generated tests, rewrites lessons to match their level and
 learning style, mentors code submissions with structured, tiered feedback, and answers
-questions across all domains through a general AI mentor chatbot.
+questions across all domains through a general AI mentor chatbot. The Career Readiness
+Stack™ carries that further: Career Autopilot™ turns a pasted job description into a
+weighted fit score and gap report, the Assessment Generator™ probes the exact gaps, a
+Customized Learning Path™ plans the hours with a Time-to-Ready ETA™, the Interview
+Rehearsal Studio™ runs a self-scored mock loop with a cross-session trend, and the
+Application Pipeline™ tracks the real-world response rate that resulted.
 
 - **Stack:** MERN — MongoDB (Mongoose), Express 5, React 19 + Vite, Node.js — TypeScript
 - **Architecture:** strict MVC with a dedicated `server/src/services/` AI orchestration layer
@@ -15,11 +20,14 @@ questions across all domains through a general AI mentor chatbot.
   rate limiting (global + auth + chat), centralized in `server/src/config/security.ts`
 - **Monetization:** freemium — Adaptive+ Premium gates Memory Twin™ (skill-decay forecast +
   Rescue Reviews) and Struggle DNA™ (error-archetype profiling); mock billing endpoint
-- **UX:** production-ready dark glassmorphism design system (Plus Jakarta Sans & JetBrains Mono typography,
-  glowing active badges, 1-click Quick Demo login, mobile hamburger drawer, slide-in admin sidebar, safe-area insets,
-  dvh-based chat layout), GSAP + Three.js + Motion animations with `prefers-reduced-motion` support
-- **QA:** signed off with 51/51 automated API checks + 24/24 Vitest integration tests + production security-header
-  verification (`docs/10_QA_Test_Plan.md`, `docs/11_QA_Report.md`)
+- **UX:** black/white design system with soft blue spotlight panels and restrained accents for CTAs and
+  status cues (Plus Jakarta Sans & JetBrains Mono typography, 1-click Quick Demo login, mobile hamburger drawer,
+  slide-in admin sidebar, safe-area insets, dvh-based chat layout), Three.js hero + Motion animations
+  (single animation engine) with `prefers-reduced-motion` support
+- **Adaptive learning UX:** dashboard next-step guidance, confidence-aware lesson ranking,
+  10–60 minute study sessions, spaced priority practice, and direct exercise links.
+- **QA:** Vitest covers services, RBAC, ownership, and learning recommendation rules.
+  Historical live QA reports are in `hackathon/10_QA_Test_Plan.md` and `hackathon/11_QA_Report.md`.
 
 ## Quickstart
 
@@ -93,21 +101,26 @@ Check `GET /api/v1/health` → `{ "aiMode": "gemini" | "mock" }`.
 
 | Doc | Description |
 |---|---|
-| `docs/01_PRD.md` | Requirements, personas, Gherkin acceptance criteria |
-| `docs/02_Technical_Documentation.md` | Architecture, data models, API contract |
 | `docs/03_Manual_Guide.md` | Developer setup and troubleshooting |
-| `docs/04_User_Manual.md` | Student and admin guides |
 | `docs/05_Platform_Overview.pptx` | Product overview deck (features + architecture) |
 | `docs/06_Implementation_Plan.md` | Phased roadmap this codebase follows |
 | `docs/08_MVP_and_Roadmap.md` | MVP scope, mocked subsystems, extension points |
-| `docs/07_Investor_Pitch_Deck.pptx` | Seed-round investor deck |
-| `docs/09_Hackathon_Pitch.pptx` | Hackathon demo deck with speaker notes |
-| `docs/10_QA_Test_Plan.md` | Full QA test case matrix with PRD traceability |
-| `docs/11_QA_Report.md` | QA execution report (51/51 API, 24/24 tests) |
 | `docs/12_Project_Guide.md` | How to run the project + complete & unique features |
-| `docs/13_Unique_Features.md` | What makes the platform different (pitch-ready) |
 | `docs/14_Vercel_Deployment_Guide.md` | Step-by-step Vercel deploy (Atlas + dashboard/CLI) |
 | `docs/15_Pitch_Deck.pptx` | Competition pitch — problem, solution, impact, innovation, feasibility |
 | `docs/16_University_Pitch_Deck.pptx` | University submission pitch (same 5 sections) — supervisor: Mr. Asif Raza, University of Mianwali |
-| `docs/17_Pro_Pitch_Deck.pptx` | Detailed 18-slide animated pitch for a technical team lead — fade transitions + build-on-click entrance animations |
+
+### `hackathon/` — submission set
+
+| Doc | Description |
+|---|---|
+| `hackathon/01_PRD.md` | Requirements, personas, Gherkin acceptance criteria |
+| `hackathon/02_Technical_Documentation.md` | Architecture, data models, API contract |
+| `hackathon/04_User_Manual.md` | Student and admin guides |
+| `hackathon/07_Investor_Pitch_Deck.pptx` | Seed-round investor deck |
+| `hackathon/09_Hackathon_Pitch.pptx` | Hackathon demo deck with speaker notes |
+| `hackathon/10_QA_Test_Plan.md` | Full QA test case matrix with PRD traceability |
+| `hackathon/11_QA_Report.md` | QA execution report (53/53 API, 109/109 tests) |
+| `hackathon/13_Unique_Features.md` | What makes the platform different (pitch-ready) |
+| `hackathon/17_Pro_Pitch_Deck.pptx` | Detailed 19-slide animated pitch for a technical team lead — fade transitions + build-on-click entrance animations |
 | `scripts/qa_api.sh` | Rerunnable automated QA suite |

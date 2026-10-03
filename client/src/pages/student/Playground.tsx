@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Editor from "@monaco-editor/react";
 import { AnimatePresence, motion } from "motion/react";
@@ -6,10 +7,10 @@ import { Code2, Sparkles, CheckCircle2, AlertTriangle } from "lucide-react";
 import api, { apiErrorMessage } from "../../lib/api";
 import CountUp from "../../components/CountUp";
 import DomainSelect from "../../components/DomainSelect";
-import { useDomainFilter } from "../../lib/domains";
-import { prefersReducedMotion, SPRING } from "../../lib/anim";
+import { useDomainFilter, setDomainFilter, type Domain } from "../../lib/domains";
+import { prefersReducedMotion, useReducedMotion, SPRING } from "../../lib/anim";
 
-const reduce = prefersReducedMotion();
+let reduce = prefersReducedMotion();
 
 interface Exercise {
   exerciseId: string;
@@ -54,7 +55,11 @@ function ScorePill({ label, value }: { label: string; value: number }) {
 }
 
 export default function Playground() {
+  reduce = useReducedMotion();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const requestedExercise = searchParams.get("exercise");
+  const [openedRequest, setOpenedRequest] = useState<string | null>(null);
   const [filter] = useDomainFilter();
   const [selectedId, setSelectedId] = useState<string>("");
   const [code, setCode] = useState<string>("");
@@ -64,6 +69,17 @@ export default function Playground() {
     queryKey: ["exercises"],
     queryFn: async () => (await api.get<{ exercises: Exercise[] }>("/submissions/exercises")).data.exercises,
   });
+
+  useEffect(() => {
+    if (!requestedExercise || openedRequest === requestedExercise || !exercises) return;
+    const requested = exercises.find((item) => item.exerciseId === requestedExercise);
+    if (!requested) return;
+    setDomainFilter(requested.domain as Domain);
+    setSelectedId(requested.exerciseId);
+    setCode(requested.starterCode);
+    setFeedback(null);
+    setOpenedRequest(requestedExercise);
+  }, [requestedExercise, openedRequest, exercises]);
 
   const visible = useMemo(() => {
     const all = exercises ?? [];
@@ -76,12 +92,12 @@ export default function Playground() {
   );
 
   useEffect(() => {
-    if (selectedId && !visible.some((e) => e.exerciseId === selectedId)) {
+    if (selectedId && !visible.some((e) => e.exerciseId === selectedId) && !(requestedExercise && openedRequest !== requestedExercise)) {
       setSelectedId("");
       setCode("");
       setFeedback(null);
     }
-  }, [visible, selectedId]);
+  }, [visible, selectedId, requestedExercise, openedRequest]);
 
   const submit = useMutation({
     mutationFn: async () => {
@@ -95,6 +111,8 @@ export default function Playground() {
     onSuccess: (data) => {
       setFeedback({ ...data, title: exercise?.title ?? "" });
       queryClient.invalidateQueries({ queryKey: ["matrix"] });
+      queryClient.invalidateQueries({ queryKey: ["resilience"] });
+      queryClient.invalidateQueries({ queryKey: ["lesson"] });
     },
   });
 

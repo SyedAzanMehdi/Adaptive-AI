@@ -5,8 +5,8 @@
 | Field | Detail |
 |---|---|
 | **Document ID** | 08_MVP_and_Roadmap |
-| **Version** | 1.1 |
-| **Date** | 2026-08-31 |
+| **Version** | 1.2 |
+| **Date** | 2026-10-02 |
 | **Author** | Syed Azan Mehdi Shah |
 | **Audience** | Founder, engineers, investors |
 
@@ -29,19 +29,22 @@ Everything below is **implemented, tested, and verified** in this repository:
 | Struggle DNA™ archetypes + countermeasures | Shipped (premium) |
 | Freemium gating (402 PREMIUM_REQUIRED) + mock upgrade | Shipped |
 | Domain Compass™: 64 domains in 12 fields, study paths, 10-year trend radar | Shipped |
-| PathFinder™: adaptive 7-day study planner (weakness-spaced) | Shipped |
-| Career Autopilot™: JD → gap analysis + 90-day plan | Shipped (premium) |
+| PathFinder™: confidence-aware spaced priorities + adjustable 10–60 minute sessions | Shipped |
+| Dashboard next-best-action guidance + personalized lesson ordering | Shipped |
+| Career Autopilot™: JD → fit %, tiered gap analysis, Recruiter Lens, 90-day plan | Shipped (premium) |
+| Automated Assessment Generator™: gap-targeted quiz/coding/interview probes | Shipped (premium) |
+| Customized Learning Path™ + Time-to-Ready ETA™ | Shipped (premium) |
+| Interview Rehearsal Studio™: role-specific mock loop, self-scorecard, trend | Shipped (free) |
+| Application Pipeline™: 6-stage tracker, server-computed response rate | Shipped (free) |
 | System Design Dojo™: 6 challenges + 4-axis AI critique | Shipped |
-| Skill Passport™: portable verifiable skill document + resume export | Shipped |
-| Scholarship Radar™: 15 fully-funded programmes, live countdowns, matching | Shipped |
+| AI-Resilience Score™: personal automation-exposure forecast + pivot path | Shipped (free) |
 | Freelance Launchpad™: matrix-grounded freelance profile generator | Shipped |
-| Global Access Doctrine™: PPP regional pricing + Urdu dual-language glossary | Shipped |
 | Admin console: users, curriculum, analytics, audit, plans | Shipped |
 | Responsive UI (mobile nav, slide-in admin sidebar) | Shipped |
-| Monochrome black & white design system, dark + light, WCAG-audited | Shipped |
+| Monochrome + restrained accent design system, dark + light, WCAG-audited | Shipped |
 | Security: helmet CSP, rate limits, CORS policy, audit log | Shipped |
-| Animations: GSAP + Three.js hero + Motion micro-interactions | Shipped |
-| Test suite: 40/40 server tests + 52-check live QA script | Passing |
+| Animations: Three.js hero + Motion micro-interactions (single animation engine) | Shipped |
+| Test suite: 114 unit/integration tests, including recommendation rules | Passing on 2026-10-02; frontend build and server type check passed |
 
 ## 2. What is mocked (and how to swap it)
 
@@ -50,7 +53,7 @@ The MVP is honest about its seams — each mock has a single, documented swap po
 | Subsystem | Current state | Production swap |
 |---|---|---|
 | AI engine | Gemini when `GEMINI_API_KEY` is set; deterministic mock provider otherwise; automatic fallback on quota/timeout/schema failure | Add `GEMINI_API_KEY` to `server/.env` — zero code changes |
-| Scholarship pool | Curated static dataset (`data/scholarships.ts`) | Swap for an official programme feed or admin-managed CRUD |
+| AI-Resilience frontier | Curated static dataset (`data/aiFrontier.ts`) | Re-tune exposure ratings as AI capability advances, or swap for an admin-managed CRUD |
 | Database | Ephemeral embedded MongoDB | Set `MONGO_URI` (Atlas/local) — zero code changes |
 | Billing | `POST /premium/upgrade` flips the plan directly | Replace the body of `upgrade` in `premiumController.ts` with Stripe Checkout + webhook handler |
 | Email/notifications | None | Add provider in `services/` (decay alerts are already computable) |
@@ -88,6 +91,10 @@ The MVP is honest about its seams — each mock has a single, documented swap po
 3. Research partnerships on memory modeling (publishable moat).
 
 ## 5. Known limitations (MVP honesty)
+
+Application Pipeline time-to-close uses the timestamp of the current closing
+stage transition. Editing notes after an offer or rejection does not change
+that duration; legacy records without stage history use their update timestamp.
 
 - Access tokens live in `localStorage` (SPA convention); production may move to
   httpOnly cookie sessions if the threat model demands it.

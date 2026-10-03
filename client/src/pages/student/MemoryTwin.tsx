@@ -16,13 +16,13 @@ import { Line } from "react-chartjs-2";
 import { Lock, Activity, Rocket, AlertTriangle, CheckCircle2 } from "lucide-react";
 import api from "../../lib/api";
 import { useAuthStore } from "../../stores/auth";
-import { prefersReducedMotion } from "../../lib/anim";
+import { prefersReducedMotion, useReducedMotion } from "../../lib/anim";
 import Reveal from "../../components/Reveal";
 import { useChartTheme } from "../../lib/chartTheme";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
-const reduce = prefersReducedMotion();
+let reduce = prefersReducedMotion();
 
 interface DomainMemory {
   domain: string;
@@ -56,6 +56,7 @@ function LockedState() {
 }
 
 export default function MemoryTwin() {
+  reduce = useReducedMotion();
   const user = useAuthStore((s) => s.user);
   const isPremium = user?.plan === "premium";
   const ct = useChartTheme();

@@ -2,8 +2,15 @@ import type { Request, Response, NextFunction } from "express";
 import { User, hashPassword } from "../models/User.js";
 import { CapabilityMatrix } from "../models/CapabilityMatrix.js";
 import { CodeSubmission } from "../models/CodeSubmission.js";
+import { ChatMessage } from "../models/ChatMessage.js";
+import { AutopilotPlan } from "../models/AutopilotPlan.js";
+import { Application } from "../models/Application.js";
+import { InterviewSession } from "../models/InterviewSession.js";
+import { FreelanceProfile } from "../models/FreelanceProfile.js";
+import { DesignCritique } from "../models/DesignCritique.js";
 import { AuditLog } from "../models/AuditLog.js";
 import { Settings } from "../models/Settings.js";
+import { SoftwareHouse } from "../models/SoftwareHouse.js";
 import { ApiError } from "../utils/errors.js";
 
 function audit(req: Request, action: string, targetType: string, targetId: string, meta: Record<string, unknown> = {}) {
@@ -91,6 +98,105 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
     await user.save();
     await audit(req, "user.update", "user", user._id.toString(), changes);
     res.json({ user: sanitize(user) });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    const targetId = String(req.params.id);
+    if (targetId === (req as any).user.id) {
+      throw new ApiError(400, "CANNOT_DELETE_SELF", "You cannot delete the account you are signed in as");
+    }
+    const user = await User.findById(targetId);
+    if (!user) throw new ApiError(404, "NOT_FOUND", "User not found");
+
+    await Promise.all([
+      CapabilityMatrix.deleteMany({ userId: user._id }),
+      CodeSubmission.deleteMany({ userId: user._id }),
+      ChatMessage.deleteMany({ userId: user._id }),
+      AutopilotPlan.deleteMany({ userId: user._id }),
+      Application.deleteMany({ userId: user._id }),
+      InterviewSession.deleteMany({ userId: user._id }),
+      FreelanceProfile.deleteMany({ userId: user._id }),
+      DesignCritique.deleteMany({ userId: user._id }),
+    ]);
+    await user.deleteOne();
+    await audit(req, "user.delete", "user", targetId, { email: user.email, role: user.role });
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+}
+
+function sanitizeHouse(doc: InstanceType<typeof SoftwareHouse>) {
+  return {
+    id: doc._id.toString(),
+    name: doc.name,
+    website: doc.website,
+    region: doc.region,
+    country: doc.country,
+    city: doc.city,
+    description: doc.description,
+    hiringFocus: doc.hiringFocus,
+    approved: doc.approved,
+    addedBy: doc.addedBy?.toString() ?? null,
+    createdAt: doc.createdAt,
+  };
+}
+
+export async function listSoftwareHouses(req: Request, res: Response, next: NextFunction) {
+  try {
+    const status = req.query.status;
+    const filter: Record<string, unknown> = {};
+    if (status === "pending") filter.approved = false;
+    else if (status === "approved") filter.approved = true;
+    const docs = await SoftwareHouse.find(filter).sort({ createdAt: -1 }).limit(500);
+    res.json({ softwareHouses: docs.map(sanitizeHouse) });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateSoftwareHouse(req: Request, res: Response, next: NextFunction) {
+  try {
+    const doc = await SoftwareHouse.findById(req.params.id);
+    if (!doc) throw new ApiError(404, "NOT_FOUND", "Software house not found");
+
+    const body = req.body ?? {};
+    const changes: Record<string, unknown> = {};
+    const fields = ["name", "website", "region", "country", "city", "description"] as const;
+    for (const f of fields) {
+      if (body[f] !== undefined) {
+        (doc as any)[f] = body[f];
+        changes[f] = body[f];
+      }
+    }
+    if (Array.isArray(body.hiringFocus)) {
+      doc.hiringFocus = body.hiringFocus;
+      changes.hiringFocus = body.hiringFocus;
+    }
+    if (typeof body.approved === "boolean") {
+      doc.approved = body.approved;
+      changes.approved = body.approved;
+    }
+
+    await doc.save();
+    await audit(req, "software_house.update", "software_house", doc._id.toString(), changes);
+    res.json({ softwareHouse: sanitizeHouse(doc) });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteSoftwareHouse(req: Request, res: Response, next: NextFunction) {
+  try {
+    const doc = await SoftwareHouse.findById(req.params.id);
+    if (!doc) throw new ApiError(404, "NOT_FOUND", "Software house not found");
+    await doc.deleteOne();
+    await audit(req, "software_house.delete", "software_house", req.params.id as string, { name: doc.name });
+    res.status(204).end();
   } catch (err) {
     next(err);
   }

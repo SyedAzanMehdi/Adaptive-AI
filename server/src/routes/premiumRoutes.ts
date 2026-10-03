@@ -12,6 +12,9 @@ import {
   createAutopilot,
   getAutopilot,
   validateAutopilot,
+  createAssessment,
+  getAssessment,
+  validateAssessment,
 } from "../controllers/premiumController.js";
 
 export const premiumRoutes = Router();
@@ -28,6 +31,10 @@ premiumRoutes.post("/memory/rescue/answer", requirePlan("premium"), validateResc
 // Struggle DNA™ — full report premium, teaser free
 premiumRoutes.get("/dna", dna);
 
-// Career Autopilot™ — JD gap analysis + 90-day plan
+// Career Autopilot™ — JD gap analysis + 90-day plan + learning path
 premiumRoutes.post("/autopilot", requirePlan("premium"), validateAutopilot, createAutopilot);
 premiumRoutes.get("/autopilot", requirePlan("premium"), getAutopilot);
+
+// Automated Assessment Generator™ — gap-targeted probes for the stored plan
+premiumRoutes.post("/autopilot/assessment", requirePlan("premium"), validateAssessment, createAssessment);
+premiumRoutes.get("/autopilot/assessment", requirePlan("premium"), getAssessment);

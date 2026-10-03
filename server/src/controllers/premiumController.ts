@@ -1,11 +1,20 @@
 import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
+import { autopilotRequestSchema, assessmentRequestSchema, type AssessmentSuite } from "@edu/shared";
 import { User } from "../models/User.js";
 import { CodeSubmission } from "../models/CodeSubmission.js";
 import { getOrCreateMatrix } from "../services/diagnosticService.js";
 import { computeMemory, startRescue, answerRescue } from "../services/memoryService.js";
 import { computeDna } from "../services/dnaService.js";
-import { analyzeJobPosting, computeGap, build90DayPlan } from "../services/autopilotService.js";
+import {
+  analyzeJobPosting,
+  build90DayPlan,
+  buildLearningPath,
+  computeGap,
+  hydrateGapReport,
+  type LearningPath,
+} from "../services/autopilotService.js";
+import { generateAssessment, suiteMinutes } from "../services/assessmentService.js";
 import { AutopilotPlan } from "../models/AutopilotPlan.js";
 import { signAccessToken, signRefreshToken } from "../utils/jwt.js";
 import { validateBody } from "../utils/validate.js";
@@ -58,7 +67,17 @@ export async function planInfo(req: Request, res: Response, next: NextFunction) 
       premiumSince: user.premiumSince,
       features:
         user.plan === "premium"
-          ? ["memory-twin", "rescue-reviews", "struggle-dna-full", "career-autopilot", "priority-adaptation"]
+          ? [
+              "memory-twin",
+              "rescue-reviews",
+              "struggle-dna-full",
+              "career-autopilot",
+              "skill-fit-percentage",
+              "recruiter-lens",
+              "assessment-generator",
+              "learning-path-eta",
+              "priority-adaptation",
+            ]
           : ["diagnostic", "adaptive-lessons", "code-mentorship", "chat"],
     });
   } catch (err) {
@@ -128,26 +147,39 @@ export async function dna(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-// ---------- Career Autopilot™ (JD gap analysis + 90-day plan) ----------
+// ---------- Career Autopilot™ (JD gap analysis + 90-day plan + learning path) ----------
 
-const autopilotSchema = z.object({
-  jobDescription: z.string().min(60).max(8000),
-  targetRole: z.string().max(120).optional(),
-});
-export const validateAutopilot = validateBody(autopilotSchema);
+export const validateAutopilot = validateBody(autopilotRequestSchema);
+export const validateAssessment = validateBody(assessmentRequestSchema);
+
+/** The student's persisted gap report, restored into the current shape. */
+async function loadStoredPlan(userId: string) {
+  const stored = await AutopilotPlan.findOne({ userId });
+  if (!stored) {
+    throw new ApiError(404, "NO_AUTOPILOT", "No Career Autopilot plan yet — generate one from a job description.");
+  }
+  const report = hydrateGapReport(stored.report);
+  if (!report) {
+    throw new ApiError(
+      409,
+      "STALE_AUTOPILOT",
+      "Your stored plan predates the current gap model. Paste the job description again to regenerate it."
+    );
+  }
+  return { stored, report };
+}
 
 export async function createAutopilot(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = (req as any).user.id;
-    const { jobDescription, targetRole } = req.body as {
-      jobDescription: string;
-      targetRole?: string;
-    };
+    const { jobDescription, targetRole, weeklyHours } = req.body as z.infer<typeof autopilotRequestSchema>;
+    const hours = weeklyHours ?? 10;
 
     const matrix = await getOrCreateMatrix(userId);
     const { analysis, source } = await analyzeJobPosting(jobDescription, targetRole);
     const report = computeGap(analysis, matrix.domains);
     const plan = build90DayPlan(report);
+    const path = buildLearningPath(report, hours);
 
     await AutopilotPlan.findOneAndUpdate(
       { userId },
@@ -158,12 +190,18 @@ export async function createAutopilot(req: Request, res: Response, next: NextFun
         source,
         report,
         plan,
+        path,
+        weeklyHours: hours,
+        // Probes aimed at the previous gaps no longer describe this role.
+        assessment: null,
+        assessmentSource: null,
+        assessedAt: null,
         createdAt: new Date(),
       },
       { upsert: true }
     );
 
-    res.json({ source, generatedAt: new Date().toISOString(), report, plan });
+    res.json({ source, generatedAt: new Date().toISOString(), report, plan, path });
   } catch (err) {
     next(err);
   }
@@ -172,13 +210,62 @@ export async function createAutopilot(req: Request, res: Response, next: NextFun
 export async function getAutopilot(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = (req as any).user.id;
-    const stored = await AutopilotPlan.findOne({ userId });
-    if (!stored) throw new ApiError(404, "NO_AUTOPILOT", "No Career Autopilot plan yet — generate one from a job description.");
+    const { stored, report } = await loadStoredPlan(userId);
+    const hours = stored.weeklyHours || 10;
+    // Documents written before the learning path existed get one on read.
+    const path = (stored.path as unknown as LearningPath | null) ?? buildLearningPath(report, hours);
+
     res.json({
       source: stored.source,
       generatedAt: stored.createdAt.toISOString(),
-      report: stored.report,
+      report,
       plan: stored.plan,
+      path,
+      hasAssessment: stored.assessment !== null,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ---------- Automated Assessment Generator™ ----------
+
+export async function createAssessment(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = (req as any).user.id;
+    const { maxItems } = req.body as z.infer<typeof assessmentRequestSchema>;
+    const { stored, report } = await loadStoredPlan(userId);
+
+    const { suite, source } = await generateAssessment(report, maxItems ?? 8);
+
+    stored.assessment = suite as unknown as Record<string, unknown>;
+    stored.assessmentSource = source;
+    stored.assessedAt = new Date();
+    await stored.save();
+
+    res.status(201).json({
+      source,
+      generatedAt: stored.assessedAt.toISOString(),
+      suite,
+      minutes: suiteMinutes(suite),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getAssessment(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { stored } = await loadStoredPlan((req as any).user.id);
+    if (!stored.assessment) {
+      throw new ApiError(404, "NO_ASSESSMENT", "No assessment generated yet — build one from your current gap report.");
+    }
+    const suite = stored.assessment as unknown as AssessmentSuite;
+    res.json({
+      source: stored.assessmentSource,
+      generatedAt: stored.assessedAt ? stored.assessedAt.toISOString() : null,
+      suite,
+      minutes: suiteMinutes(suite),
     });
   } catch (err) {
     next(err);

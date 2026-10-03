@@ -6,9 +6,8 @@ import {
   answerDiagnostic,
   getOrCreateMatrix,
 } from "../services/diagnosticService.js";
-import { buildPassport } from "../services/passportService.js";
-import { matchScholarships, SCHOLARSHIP_FILTER_OPTIONS } from "../services/scholarshipService.js";
-import { URDU_GLOSSARY } from "../data/urduGlossary.js";
+import { computeResilience } from "../services/resilienceService.js";
+import { getFieldRecommendation } from "../services/fieldRecommendationService.js";
 import { ApiError } from "../utils/errors.js";
 
 export async function me(req: Request, res: Response, next: NextFunction) {
@@ -20,6 +19,7 @@ export async function me(req: Request, res: Response, next: NextFunction) {
       name: user.name,
       email: user.email,
       role: user.role,
+      plan: user.plan,
       profile: user.profile,
       status: user.status,
     });
@@ -70,25 +70,20 @@ export async function mySubmissions(req: Request, res: Response, next: NextFunct
   }
 }
 
-export async function passport(req: Request, res: Response, next: NextFunction) {
+export async function resilience(req: Request, res: Response, next: NextFunction) {
   try {
-    const passport = await buildPassport((req as any).user.id);
-    res.json({ passport });
+    const matrix = await getOrCreateMatrix((req as any).user.id);
+    res.json(computeResilience(matrix.domains));
   } catch (err) {
     next(err);
   }
 }
 
-export async function glossary(_req: Request, res: Response) {
-  res.json({ glossary: URDU_GLOSSARY });
-}
-
-export async function scholarships(req: Request, res: Response) {
-  const { level, country, field } = req.query as Record<string, string | undefined>;
-  const matched = matchScholarships({ level, country, field });
-  res.json({
-    scholarships: matched,
-    filters: SCHOLARSHIP_FILTER_OPTIONS,
-    total: matched.length,
-  });
+export async function fieldRecommendation(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { recommendation, source } = await getFieldRecommendation((req as any).user.id);
+    res.json({ recommendation, source });
+  } catch (err) {
+    next(err);
+  }
 }

@@ -16,3 +16,6 @@ build/
 mongo-data/
 coverage/
 ~$*.docx
+
+.vercel
+.env*

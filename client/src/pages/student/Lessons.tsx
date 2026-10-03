@@ -3,11 +3,14 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { BookOpen, SearchX } from "lucide-react";
 import api from "../../lib/api";
-import { prefersReducedMotion } from "../../lib/anim";
+import { prefersReducedMotion, useReducedMotion } from "../../lib/anim";
 import DomainSelect from "../../components/DomainSelect";
 import { domainLabel, useDomainFilter } from "../../lib/domains";
+import { learningPriority, skillGuidance, type SkillSignal } from "../../lib/learning";
+import ErrorBanner from "../../components/ErrorBanner";
+import { apiErrorMessage } from "../../lib/api";
 
-const reduce = prefersReducedMotion();
+let reduce = prefersReducedMotion();
 
 interface LessonSummary {
   _id: string;
@@ -18,14 +21,20 @@ interface LessonSummary {
 }
 
 export default function Lessons() {
+  reduce = useReducedMotion();
   const [filter, setFilter] = useDomainFilter();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["lessons"],
     queryFn: async () => (await api.get<{ lessons: LessonSummary[] }>("/lessons")).data.lessons,
   });
+  const { data: matrix } = useQuery({
+    queryKey: ["matrix"],
+    queryFn: async () => (await api.get<{ domains: Record<string, SkillSignal> }>("/student/matrix")).data,
+  });
 
   const lessons = data ?? [];
-  const filtered = filter === "all" ? lessons : lessons.filter((l) => l.domain === filter);
+  const filtered = (filter === "all" ? [...lessons] : lessons.filter((l) => l.domain === filter))
+    .sort((a, b) => learningPriority(matrix?.domains[b.domain]) - learningPriority(matrix?.domains[a.domain]));
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -41,6 +50,7 @@ export default function Lessons() {
         <h1 className="text-2xl sm:text-4xl font-black text-black dark:text-white tracking-tight">Adaptive Lessons</h1>
         <p className="text-neutral-600 dark:text-neutral-400 text-xs sm:text-sm mt-1 max-w-xl">
           Lessons automatically adapt when the AI tutor detects struggle with a competency domain.
+          {matrix && " Recommended order reflects your mastery and confidence."}
         </p>
       </motion.div>
 
@@ -60,6 +70,7 @@ export default function Lessons() {
         )}
       </motion.div>
 
+      {error && <ErrorBanner message={apiErrorMessage(error)} />}
       {isLoading ? (
         <div className="h-48 flex items-center justify-center text-neutral-500 text-sm">
           <svg className="animate-spin h-5 w-5 text-neutral-500 mr-2" viewBox="0 0 24 24" fill="none">
@@ -91,6 +102,7 @@ export default function Lessons() {
             >
               <Link to={`/lessons/${lesson.conceptId}`} className="card card-hover block h-full flex flex-col justify-between !p-6">
                 <div>
+                  {matrix && <div className="mb-3"><span className="learning-eyebrow">{i === 0 ? "Suggested next · " : ""}{skillGuidance(matrix.domains[lesson.domain]).label}</span></div>}
                   <div className="flex justify-between items-start mb-3 gap-2">
                     <h2 className="font-bold text-black dark:text-white text-base sm:text-lg hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors">
                       {lesson.title}
@@ -99,6 +111,7 @@ export default function Lessons() {
                       {lesson.domain.replace("_", " ")}
                     </span>
                   </div>
+                  {matrix && <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-4 leading-relaxed">{skillGuidance(matrix.domains[lesson.domain]).reason}</p>}
                   <ul className="text-xs text-neutral-600 dark:text-neutral-400 space-y-1.5 mb-4">
                     {lesson.objectives.slice(0, 3).map((o, j) => (
                       <li key={j} className="flex items-start gap-2">

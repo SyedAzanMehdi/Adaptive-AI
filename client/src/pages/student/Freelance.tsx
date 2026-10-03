@@ -11,10 +11,11 @@ import {
   Check,
 } from "lucide-react";
 import api, { apiErrorMessage } from "../../lib/api";
-import { prefersReducedMotion } from "../../lib/anim";
+import { prefersReducedMotion, useReducedMotion } from "../../lib/anim";
 import Reveal from "../../components/Reveal";
+import ErrorBanner from "../../components/ErrorBanner";
 
-const reduce = prefersReducedMotion();
+let reduce = prefersReducedMotion();
 
 interface FreelanceGig {
   title: string;
@@ -38,6 +39,7 @@ interface FreelanceResponse {
 }
 
 export default function Freelance() {
+  reduce = useReducedMotion();
   const queryClient = useQueryClient();
   const [focus, setFocus] = useState("");
   const [copied, setCopied] = useState(false);
@@ -114,11 +116,7 @@ export default function Freelance() {
             value={focus}
             onChange={(e) => setFocus(e.target.value)}
           />
-          {generate.error && (
-            <div className="bg-black/5 dark:bg-white/5 border border-black/20 dark:border-white/20 text-neutral-700 dark:text-neutral-300 rounded-xl p-3.5 mt-4 text-xs font-medium">
-              {apiErrorMessage(generate.error)}
-            </div>
-          )}
+          {generate.error && <ErrorBanner message={apiErrorMessage(generate.error)} className="mt-4" />}
           <button
             className="btn-primary mt-4 inline-flex items-center gap-2"
             disabled={generate.isPending}
@@ -219,7 +217,7 @@ export default function Freelance() {
               <ul className="mt-2 grid sm:grid-cols-3 gap-3 text-xs">
                 <li>Under-price the first 2 gigs to collect reviews, then raise to your rate band.</li>
                 <li>Reply to every brief within a few hours — response speed drives ranking.</li>
-                <li>Link your Skill Passport so clients can verify your skills independently.</li>
+                <li>Share your Capability Matrix so clients can verify your skills independently.</li>
               </ul>
             </div>
           </Reveal>

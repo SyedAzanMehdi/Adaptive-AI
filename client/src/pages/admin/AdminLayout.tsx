@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
-import { Users, Settings, BarChart3, Shield, Zap, LogOut } from "lucide-react";
+import { Users, Settings, BarChart3, Shield, Zap, LogOut, Building2 } from "lucide-react";
 import { useAuthStore } from "../../stores/auth";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { PageTransition } from "../../components/PageTransition";
 
 const links = [
   { to: "/admin/users", label: "Users & Accounts", Icon: Users },
+  { to: "/admin/software-houses", label: "Software Houses", Icon: Building2 },
   { to: "/admin/curriculum", label: "Curriculum Settings", Icon: Settings },
   { to: "/admin/analytics", label: "Analytics & AI Metrics", Icon: BarChart3 },
   { to: "/admin/audit", label: "Audit Log & Security", Icon: Shield },
