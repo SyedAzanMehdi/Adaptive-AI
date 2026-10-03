@@ -144,16 +144,6 @@ export function applySecurity(app: Express): void {
       })
     );
     app.use(
-      "/api/v1/software-houses",
-      rateLimit({
-        windowMs: 15 * 60 * 1000,
-        limit: 60,
-        standardHeaders: true,
-        legacyHeaders: false,
-        message: RATE_LIMIT_BODY("Software house directory limit reached; try again shortly"),
-      })
-    );
-    app.use(
       "/api/v1/freelance/generate",
       rateLimit({
         windowMs: 15 * 60 * 1000,
