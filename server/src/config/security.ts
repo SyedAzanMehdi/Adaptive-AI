@@ -1,6 +1,9 @@
-import helmet from "helmet";
+import * as helmetModule from "helmet";
 import cors from "cors";
-import rateLimit from "express-rate-limit";
+import * as rateLimitModule from "express-rate-limit";
+
+const helmet = helmetModule.default;
+const rateLimit = rateLimitModule.default;
 import type { Express } from "express";
 import { env } from "./env.js";
 
