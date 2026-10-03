@@ -134,7 +134,6 @@ function sanitizeHouse(doc: InstanceType<typeof SoftwareHouse>) {
   return {
     id: doc._id.toString(),
     name: doc.name,
-    website: doc.website,
     region: doc.region,
     country: doc.country,
     city: doc.city,
@@ -159,6 +158,26 @@ export async function listSoftwareHouses(req: Request, res: Response, next: Next
   }
 }
 
+export async function createSoftwareHouse(req: Request, res: Response, next: NextFunction) {
+  try {
+    const body = req.body;
+    const doc = await SoftwareHouse.create({
+      name: body.name.trim(),
+      region: body.region,
+      country: body.country.trim(),
+      city: body.city?.trim() ?? "",
+      description: body.description ?? "",
+      hiringFocus: body.hiringFocus ?? [],
+      addedBy: (req as any).user.id,
+      approved: true,
+    });
+    await audit(req, "software_house.create", "software_house", doc._id.toString(), { name: doc.name });
+    res.status(201).json({ softwareHouse: sanitizeHouse(doc) });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function updateSoftwareHouse(req: Request, res: Response, next: NextFunction) {
   try {
     const doc = await SoftwareHouse.findById(req.params.id);
@@ -166,7 +185,7 @@ export async function updateSoftwareHouse(req: Request, res: Response, next: Nex
 
     const body = req.body ?? {};
     const changes: Record<string, unknown> = {};
-    const fields = ["name", "website", "region", "country", "city", "description"] as const;
+    const fields = ["name", "region", "country", "city", "description"] as const;
     for (const f of fields) {
       if (body[f] !== undefined) {
         (doc as any)[f] = body[f];

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { passwordSchema } from "@edu/shared";
+import { passwordSchema, softwareHouseRequestSchema, softwareHouseAdminUpdateSchema } from "@edu/shared";
 import { authenticate, requireRole } from "../middleware/authMiddleware.js";
 import { validateBody } from "../utils/validate.js";
 import {
@@ -9,6 +9,7 @@ import {
   updateUser,
   deleteUser,
   listSoftwareHouses,
+  createSoftwareHouse,
   updateSoftwareHouse,
   deleteSoftwareHouse,
   getCurriculum,
@@ -44,7 +45,8 @@ adminRoutes.post("/users", validateBody(createUserSchema), createUser);
 adminRoutes.patch("/users/:id", validateBody(updateUserSchema), updateUser);
 adminRoutes.delete("/users/:id", deleteUser);
 adminRoutes.get("/software-houses", listSoftwareHouses);
-adminRoutes.patch("/software-houses/:id", updateSoftwareHouse);
+adminRoutes.post("/software-houses", validateBody(softwareHouseRequestSchema), createSoftwareHouse);
+adminRoutes.patch("/software-houses/:id", validateBody(softwareHouseAdminUpdateSchema), updateSoftwareHouse);
 adminRoutes.delete("/software-houses/:id", deleteSoftwareHouse);
 adminRoutes.get("/curriculum", getCurriculum);
 adminRoutes.patch("/curriculum", updateCurriculum);

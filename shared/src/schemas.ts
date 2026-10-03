@@ -324,7 +324,6 @@ export type SoftwareHouseRegion = z.infer<typeof softwareHouseRegionSchema>;
 
 export const softwareHouseRequestSchema = z.object({
   name: z.string().min(1).max(140),
-  website: httpUrlSchema.optional(),
   region: softwareHouseRegionSchema,
   country: z.string().min(1).max(80),
   city: z.string().max(80).optional(),

@@ -1,10 +1,8 @@
 // Curated starter directory, seeded once at boot if the collection is empty
-// (see bootstrap.ts). Admins can edit/add/remove freely afterward; students
-// can submit new entries which land in the moderation queue (approved: false)
-// until an admin reviews them.
+// (see bootstrap.ts). Admin-managed only — students browse but cannot add,
+// edit, or submit entries. Admins can add/edit/unpublish/delete freely.
 export interface SoftwareHouseSeed {
   name: string;
-  website: string;
   region: "pakistan" | "international";
   country: string;
   city: string;
@@ -16,7 +14,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   // --- Pakistan ---
   {
     name: "Systems Limited",
-    website: "https://www.systemsltd.com",
     region: "pakistan",
     country: "Pakistan",
     city: "Lahore",
@@ -25,7 +22,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "NetSol Technologies",
-    website: "https://www.netsoltech.com",
     region: "pakistan",
     country: "Pakistan",
     city: "Lahore",
@@ -34,7 +30,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "Arbisoft",
-    website: "https://www.arbisoft.com",
     region: "pakistan",
     country: "Pakistan",
     city: "Lahore",
@@ -43,7 +38,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "10Pearls",
-    website: "https://www.10pearls.com",
     region: "pakistan",
     country: "Pakistan",
     city: "Karachi",
@@ -52,7 +46,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "Folio3",
-    website: "https://www.folio3.com",
     region: "pakistan",
     country: "Pakistan",
     city: "Karachi",
@@ -61,7 +54,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "Devsinc",
-    website: "https://devsinc.com",
     region: "pakistan",
     country: "Pakistan",
     city: "Lahore",
@@ -70,7 +62,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "VentureDive",
-    website: "https://venturedive.com",
     region: "pakistan",
     country: "Pakistan",
     city: "Karachi",
@@ -79,7 +70,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "Contour Software",
-    website: "https://www.contoursoftware.com",
     region: "pakistan",
     country: "Pakistan",
     city: "Lahore",
@@ -88,7 +78,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "Techlogix",
-    website: "https://www.techlogix.com",
     region: "pakistan",
     country: "Pakistan",
     city: "Lahore",
@@ -97,7 +86,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "Afiniti",
-    website: "https://www.afiniti.com",
     region: "pakistan",
     country: "Pakistan",
     city: "Karachi",
@@ -108,7 +96,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   // --- International ---
   {
     name: "Google",
-    website: "https://careers.google.com",
     region: "international",
     country: "United States",
     city: "Mountain View, CA",
@@ -117,7 +104,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "Microsoft",
-    website: "https://careers.microsoft.com",
     region: "international",
     country: "United States",
     city: "Redmond, WA",
@@ -126,7 +112,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "Amazon",
-    website: "https://www.amazon.jobs",
     region: "international",
     country: "United States",
     city: "Seattle, WA",
@@ -135,7 +120,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "Shopify",
-    website: "https://www.shopify.com/careers",
     region: "international",
     country: "Canada",
     city: "Ottawa",
@@ -144,7 +128,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "ThoughtWorks",
-    website: "https://www.thoughtworks.com/careers",
     region: "international",
     country: "United Kingdom",
     city: "London",
@@ -153,7 +136,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "Endava",
-    website: "https://www.endava.com/careers",
     region: "international",
     country: "United Kingdom",
     city: "London",
@@ -162,7 +144,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "Globant",
-    website: "https://www.globant.com/careers",
     region: "international",
     country: "United States",
     city: "New York, NY",
@@ -171,7 +152,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "Epic Systems",
-    website: "https://careers.epic.com",
     region: "international",
     country: "United States",
     city: "Verona, WI",
@@ -180,7 +160,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "Atlassian",
-    website: "https://www.atlassian.com/company/careers",
     region: "international",
     country: "Australia",
     city: "Sydney",
@@ -189,7 +168,6 @@ export const SOFTWARE_HOUSES: SoftwareHouseSeed[] = [
   },
   {
     name: "Stripe",
-    website: "https://stripe.com/jobs",
     region: "international",
     country: "United States",
     city: "San Francisco, CA",

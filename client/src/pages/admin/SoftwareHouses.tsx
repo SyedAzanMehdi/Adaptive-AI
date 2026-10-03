@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, XCircle, Trash2 } from "lucide-react";
-import api from "../../lib/api";
+import api, { apiErrorMessage } from "../../lib/api";
 
 interface SoftwareHouse {
   id: string;
   name: string;
-  website: string;
   region: "pakistan" | "international";
   country: string;
   city: string;
@@ -18,14 +17,19 @@ interface SoftwareHouse {
 }
 
 const STATUS_OPTIONS = [
-  { value: "pending", label: "Pending review" },
-  { value: "approved", label: "Approved" },
   { value: "", label: "All" },
+  { value: "approved", label: "Published" },
+  { value: "pending", label: "Unpublished" },
 ];
+
+const emptyForm = { name: "", region: "pakistan", country: "", city: "", description: "", hiringFocus: "" };
 
 export default function AdminSoftwareHouses() {
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState("pending");
+  const [status, setStatus] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [error, setError] = useState("");
 
   const { data: houses } = useQuery({
     queryKey: ["admin-software-houses", status],
@@ -35,6 +39,24 @@ export default function AdminSoftwareHouses() {
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin-software-houses"] });
+
+  const create = useMutation({
+    mutationFn: () =>
+      api.post("/admin/software-houses", {
+        ...form,
+        hiringFocus: form.hiringFocus
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      }),
+    onSuccess: () => {
+      invalidate();
+      setShowAdd(false);
+      setForm(emptyForm);
+      setError("");
+    },
+    onError: (err) => setError(apiErrorMessage(err)),
+  });
 
   const patch = useMutation({
     mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) => api.patch(`/admin/software-houses/${id}`, body),
@@ -48,10 +70,45 @@ export default function AdminSoftwareHouses() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-black text-black dark:text-white">Software House Directory</h1>
-        <p className="text-xs text-neutral-600 dark:text-neutral-400">Approve student submissions, edit entries, or remove outdated ones.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-black dark:text-white">Software House Directory</h1>
+          <p className="text-xs text-neutral-600 dark:text-neutral-400">Admin-managed only. Add, edit, unpublish, or remove entries.</p>
+        </div>
+        <button className="btn-primary text-xs" onClick={() => { setShowAdd((v) => !v); setError(""); }}>
+          {showAdd ? "Cancel" : "+ Add Software House"}
+        </button>
       </div>
+
+      {showAdd && (
+        <div className="card border-black/30 dark:border-white/30 space-y-3">
+          <h2 className="font-bold text-black dark:text-white text-sm">Add Software House</h2>
+          {error && <div className="bg-black/5 dark:bg-white/5 border border-black/20 dark:border-white/20 text-neutral-700 dark:text-neutral-300 rounded-xl p-3 text-xs">{error}</div>}
+          <div className="grid md:grid-cols-2 gap-3">
+            <input className="input" placeholder="Company name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <select className="input" value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })}>
+              <option value="pakistan">Pakistan</option>
+              <option value="international">International</option>
+            </select>
+            <input className="input" placeholder="Country" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} />
+            <input className="input" placeholder="City (optional)" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+            <input className="input md:col-span-2" placeholder="Hiring focus, comma-separated (e.g. Web, AI/ML)" value={form.hiringFocus} onChange={(e) => setForm({ ...form, hiringFocus: e.target.value })} />
+          </div>
+          <textarea
+            className="input !h-20"
+            placeholder="Short description (optional)"
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
+          <button
+            className="btn-amber text-xs font-bold disabled:opacity-50"
+            disabled={create.isPending || !form.name.trim() || !form.country.trim()}
+            onClick={() => create.mutate()}
+          >
+            {create.isPending ? "Adding..." : "Add to Directory"}
+          </button>
+        </div>
+      )}
 
       <div className="flex gap-2">
         {STATUS_OPTIONS.map((o) => (
@@ -76,7 +133,6 @@ export default function AdminSoftwareHouses() {
               <th className="px-4 py-3.5">Name</th>
               <th className="px-4 py-3.5">Region</th>
               <th className="px-4 py-3.5">Country</th>
-              <th className="px-4 py-3.5">Submitted by</th>
               <th className="px-4 py-3.5">Status</th>
               <th className="px-4 py-3.5">Actions</th>
             </tr>
@@ -87,14 +143,13 @@ export default function AdminSoftwareHouses() {
                 <td className="px-4 py-3 font-semibold text-neutral-800 dark:text-neutral-200">{h.name}</td>
                 <td className="px-4 py-3 capitalize text-neutral-600 dark:text-neutral-400">{h.region}</td>
                 <td className="px-4 py-3 text-neutral-600 dark:text-neutral-400">{h.country}</td>
-                <td className="px-4 py-3 font-mono text-[10px] text-neutral-500">{h.addedBy ? h.addedBy.slice(-6) : "seed"}</td>
                 <td className="px-4 py-3">
                   <span className={`text-[10px] font-bold uppercase tracking-wider rounded-full px-2.5 py-0.5 border ${
                     h.approved
                       ? "bg-black/5 dark:bg-white/5 border-black/30 dark:border-white/30 text-neutral-800 dark:text-neutral-200"
                       : "bg-neutral-200 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400"
                   }`}>
-                    {h.approved ? "Approved" : "Pending"}
+                    {h.approved ? "Published" : "Unpublished"}
                   </span>
                 </td>
                 <td className="px-4 py-3 space-x-2 whitespace-nowrap font-medium">
@@ -104,7 +159,7 @@ export default function AdminSoftwareHouses() {
                       onClick={() => patch.mutate({ id: h.id, body: { approved: true } })}
                     >
                       <CheckCircle2 size={12} />
-                      Approve
+                      Publish
                     </button>
                   )}
                   {h.approved && (
@@ -128,7 +183,7 @@ export default function AdminSoftwareHouses() {
             ))}
             {houses && houses.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-neutral-500">Nothing here.</td>
+                <td colSpan={5} className="px-4 py-8 text-center text-neutral-500">Nothing here.</td>
               </tr>
             )}
           </tbody>
